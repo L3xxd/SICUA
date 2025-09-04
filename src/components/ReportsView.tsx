@@ -1,20 +1,44 @@
-import React, { useState } from 'react';
-import { BarChart3, Download, Filter, TrendingUp, Users, Calendar,Clock } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { BarChart3, Download, Filter, TrendingUp, Users, Calendar, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { mockUsers } from '../data/mockData';
 
 const ReportsView: React.FC = () => {
   const { requests } = useApp();
-  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
-  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<'monthly'|'quarterly'|'yearly'>('monthly');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
 
-  const departments = ['all', 'Desarrollo', 'Ventas', 'Marketing', 'RRHH'];
+  const departments = useMemo(() => {
+    const set = new Set<string>(['all']);
+    mockUsers.forEach(u => set.add(u.department));
+    return Array.from(set);
+  }, []);
+
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    if (selectedPeriod === 'monthly') {
+      return { start: new Date(year, now.getMonth(), 1), end: new Date(year, now.getMonth() + 1, 0, 23, 59, 59, 999) };
+    }
+    if (selectedPeriod === 'quarterly') {
+      const q = Math.floor(now.getMonth() / 3);
+      return { start: new Date(year, q * 3, 1), end: new Date(year, q * 3 + 3, 0, 23, 59, 59, 999) };
+    }
+    return { start: new Date(year, 0, 1), end: new Date(year, 11, 31, 23, 59, 59, 999) };
+  }, [selectedPeriod]);
+
+  const filteredRequests = useMemo(() => {
+    const deptUsers = selectedDepartment === 'all' ? mockUsers : mockUsers.filter(u => u.department === selectedDepartment);
+    const ids = new Set(deptUsers.map(u => u.id));
+    const start = dateRange.start, end = dateRange.end;
+    return requests.filter(r => ids.has(r.employeeId) && new Date(r.endDate) >= start && new Date(r.startDate) <= end);
+  }, [requests, selectedDepartment, dateRange]);
   
   // Calcular estadísticas
-  const totalRequests = requests.length;
-  const approvedRequests = requests.filter(r => r.status === 'approved').length;
-  const rejectedRequests = requests.filter(r => r.status === 'rejected').length;
-  const pendingRequests = requests.filter(r => r.status === 'pending').length;
+  const totalRequests = filteredRequests.length;
+  const approvedRequests = filteredRequests.filter(r => r.status === 'approved').length;
+  const rejectedRequests = filteredRequests.filter(r => r.status === 'rejected').length;
+  const pendingRequests = filteredRequests.filter(r => r.status === 'pending').length;
 
   const reportData = [
     {
@@ -48,16 +72,15 @@ const ReportsView: React.FC = () => {
   ];
 
   const typeDistribution = [
-    { type: 'Vacaciones', count: requests.filter(r => r.type === 'vacation').length, color: 'bg-blue-500' },
-    { type: 'Permisos', count: requests.filter(r => r.type === 'permission').length, color: 'bg-green-500' },
-    { type: 'Licencias', count: requests.filter(r => r.type === 'leave').length, color: 'bg-purple-500' },
+    { type: 'Vacaciones', count: filteredRequests.filter(r => r.type === 'vacation').length, color: 'bg-blue-500' },
+    { type: 'Permisos', count: filteredRequests.filter(r => r.type === 'permission').length, color: 'bg-green-500' },
+    { type: 'Licencias', count: filteredRequests.filter(r => r.type === 'leave').length, color: 'bg-purple-500' },
   ];
 
-  const departmentUsage = departments.slice(1).map(dept => {
+  const departmentUsage = departments.filter(d => d !== 'all').map(dept => {
     const deptUsers = mockUsers.filter(u => u.department === dept);
-    const deptRequests = requests.filter(r => 
-      deptUsers.some(u => u.id === r.employeeId)
-    );
+    const deptIds = new Set(deptUsers.map(u => u.id));
+    const deptRequests = filteredRequests.filter(r => deptIds.has(r.employeeId));
     return {
       name: dept,
       employees: deptUsers.length,
@@ -65,6 +88,22 @@ const ReportsView: React.FC = () => {
       avgDays: deptRequests.length > 0 ? (deptRequests.reduce((sum, r) => sum + r.days, 0) / deptRequests.length).toFixed(1) : '0',
     };
   });
+
+  const exportCSV = () => {
+    const header = ['Empleado','Departamento','Tipo','Inicio','Fin','Días','Estado'];
+    const rows = filteredRequests.map(r => {
+      const user = mockUsers.find(u => u.id === r.employeeId);
+      return [r.employeeName, user?.department || '', r.type, r.startDate, r.endDate, r.days, r.status];
+    });
+    const csv = [header, ...rows].map(cols => cols.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reporte_solicitudes.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
@@ -75,7 +114,7 @@ const ReportsView: React.FC = () => {
             Análisis detallado de ausencias y cumplimiento de políticas
           </p>
         </div>
-        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        <button onClick={exportCSV} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
           <Download className="h-4 w-4 mr-2" />
           Exportar Reporte
         </button>

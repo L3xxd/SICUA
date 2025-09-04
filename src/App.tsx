@@ -9,6 +9,9 @@ import LoginForm from './components/LoginForm';
 import CalendarView from './components/CalendarView';
 import ApprovalsView from './components/ApprovalsView';
 import TeamView from './components/TeamView';
+import EmployeesManagement from './components/EmployeesManagement';
+import PoliciesView from './components/PoliciesView';
+import ReportsView from './components/ReportsView';
 
 const App: React.FC = () => {
   return (
@@ -33,8 +36,9 @@ const App: React.FC = () => {
           <Route path="calendar" element={<CalendarView />} />
           <Route path="approvals" element={<ApprovalsView />} />
           <Route path="team" element={<TeamView />} />
-          <Route path="reports" element={<div>Reportes</div>} />
-          <Route path="employees" element={<div>Gestión de empleados</div>} />
+          <Route path="reports" element={<ReportsView />} />
+          <Route path="employees" element={<EmployeesManagement />} />
+          <Route path="policies" element={<PoliciesView />} />
         </Route>
       </Route>
 

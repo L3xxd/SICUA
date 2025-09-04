@@ -70,3 +70,13 @@ export interface PolicyRule {
   requiresApproval: boolean;
   approvalLevels: string[];
 }
+
+export interface PolicyChange {
+  id: string; // policy id
+  type: PolicyRule['type'];
+  field: string;
+  from: string | number | boolean;
+  to: string | number | boolean;
+  actor: string; // who changed it
+  date: string; // ISO timestamp
+}
