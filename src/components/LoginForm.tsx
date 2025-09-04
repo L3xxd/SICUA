@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginForm: React.FC = () => {
@@ -14,7 +14,7 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     const success = login(email, password);
     if (!success) {
       setError('Credenciales inválidas');
@@ -32,10 +32,18 @@ const LoginForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Encabezado con logo */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
-            <LogIn className="h-8 w-8 text-white" />
+          {/* Imagen proporcional, tamaño responsivo */}
+          <div className="flex justify-center">
+            <img
+              src="/icono-big.png"
+              alt="SICUA"
+              className="w-16 sm:w-20 md:w-24 h-auto rounded-2xl shadow-md max-w-full"
+              loading="eager"
+            />
           </div>
+
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Sistema de Control de Usuarios y Administración
           </h2>
@@ -43,7 +51,8 @@ const LoginForm: React.FC = () => {
             Accede a tu cuenta corporativa
           </p>
         </div>
-        
+
+        {/* Tarjeta de formulario */}
         <div className="bg-white rounded-lg shadow-lg p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
@@ -104,13 +113,16 @@ const LoginForm: React.FC = () => {
             </button>
           </form>
 
+          {/* Acceso rápido de demostración */}
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Acceso rápido de demostración</span>
+                <span className="px-2 bg-white text-gray-500">
+                  Acceso rápido de demostración
+                </span>
               </div>
             </div>
 
@@ -128,7 +140,7 @@ const LoginForm: React.FC = () => {
                 </button>
               ))}
             </div>
-            
+
             <p className="mt-4 text-xs text-gray-500 text-center">
               Contraseña para todas las cuentas: "password"
             </p>
@@ -140,3 +152,5 @@ const LoginForm: React.FC = () => {
 };
 
 export default LoginForm;
+
+
