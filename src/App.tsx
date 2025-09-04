@@ -1,104 +1,44 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-
+import { Route, Routes, Navigate } from 'react-router-dom';
+import { Protected } from './components/Protected/Protected';
 import Layout from './components/Layout';
-import LoginForm from './components/LoginForm';
+import RequestForm from './components/requests/RequestForm';
+import RequestsList from './components/requests/RequestsList';
 import Dashboard from './components/Dashboard';
-import RequestsList from './components/RequestsList';
+import LoginForm from './components/LoginForm';
 import CalendarView from './components/CalendarView';
-import ApprovalsView from './components/ApprovalsView';
-import ReportsView from './components/ReportsView';
 
-const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser } = useAuth();
-  return currentUser ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
-// Evita que un usuario autenticado entre a /login
-const GuestOnly: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser } = useAuth();
-  return currentUser ? <Navigate to="/dashboard" replace /> : <>{children}</>;
-};
-
-// Decide adónde mandar cuando visitas "/"
-const IndexRedirect: React.FC = () => {
-  const { currentUser } = useAuth();
-  return <Navigate to={currentUser ? '/dashboard' : '/login'} replace />;
-};
-
-export default function App() {
+const App: React.FC = () => {
   return (
     <Routes>
-      {/* Index -> login o dashboard según sesión */}
-      <Route path="/" element={<IndexRedirect />} />
+      {/* Ruta pública */}
+      <Route path="/login" element={<LoginForm />} />
 
-      {/* Login solo si NO estás autenticado */}
-      <Route
-        path="/login"
-        element={
-          <GuestOnly>
-            <LoginForm />
-          </GuestOnly>
-        }
-      />
+      {/* Rutas protegidas */}
+      <Route element={<Protected />}>
+        {/* Layout con Sidebar y Header */}
+        <Route path="/" element={<Layout />}>
+          {/* Redirección desde raíz al dashboard */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          {/* Rutas principales */}
+          <Route path="dashboard" element={<Dashboard />} />
 
-      {/* Rutas protegidas (cada una dentro de Layout) */}
-      <Route
-        path="/dashboard"
-        element={
-          <Protected>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/requests"
-        element={
-          <Protected>
-            <Layout>
-              <RequestsList />
-            </Layout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <Protected>
-            <Layout>
-              <CalendarView />
-            </Layout>
-          </Protected>
-        }
-      />
+          {/* Solicitudes */}
+          <Route path="requests" element={<RequestsList />} />
+          <Route path="requests/new" element={<RequestForm />} />
 
-      {/* Extras opcionales */}
-      <Route
-        path="/approvals"
-        element={
-          <Protected>
-            <Layout>
-              <ApprovalsView />
-            </Layout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <Protected>
-            <Layout>
-              <ReportsView />
-            </Layout>
-          </Protected>
-        }
-      />
+          {/* Otras rutas del sidebar */}
+          <Route path="calendar" element={<CalendarView />} />
+          <Route path="team" element={<div>Mi equipo</div>} />
+          <Route path="reports" element={<div>Reportes</div>} />
+          <Route path="employees" element={<div>Gestión de empleados</div>} />
+        </Route>
+      </Route>
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Fallback */}
+      <Route path="*" element={<div>404 - Página no encontrada</div>} />
     </Routes>
   );
-}
+};
+
+export default App;

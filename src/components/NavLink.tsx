@@ -1,33 +1,30 @@
 import React from 'react';
-import { NavLink as RouterNavLink } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { LucideIcon } from 'lucide-react';
 
-interface Props {
-  to: string;
+interface NavLinkProps {
+  href: string;
   icon: LucideIcon;
   name: string;
-  onClick?: () => void; // útil para cerrar el sidebar en móvil
+  onClick?: () => void;
 }
 
-export const NavLink: React.FC<Props> = ({ to, icon: Icon, name, onClick }) => {
+export const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, name, onClick }) => {
+  const { pathname } = useLocation(); // Usamos useLocation para obtener la URL actual
+  const isActive = pathname === href; // Verificamos si el enlace está activo
+
   return (
-    <RouterNavLink
-      to={to}
+    <Link
+      to={href}
       onClick={onClick}
-      className={({ isActive }) =>
-        `flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-          isActive
-            ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-600'
-            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-        }`
-      }
+      className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+        isActive
+          ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-600'
+          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+      }`}
     >
-      {({ isActive }) => (
-        <>
-          <Icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-          {name}
-        </>
-      )}
-    </RouterNavLink>
+      <Icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+      {name}
+    </Link>
   );
 };

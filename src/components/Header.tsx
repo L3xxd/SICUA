@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   ).length;
 
   return (
-    // Header con altura fija y borde inferior
+    // Header pegado arriba; ocupa su espacio natural
     <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
       <div className="h-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center">
@@ -72,4 +72,3 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 };
 
 export default Header;
-

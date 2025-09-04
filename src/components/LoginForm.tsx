@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Eye,
   EyeOff,
@@ -21,6 +22,7 @@ type QuickLogin = {
 };
 
 const LoginForm: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +36,12 @@ const LoginForm: React.FC = () => {
     setError('');
 
     const success = login(email, password);
-    if (!success) setError('Credenciales inválidas');
+    if (!success) {
+      setError('Credenciales inválidas');
+    } else {
+      // Ir al dashboard tras iniciar sesión
+      navigate('/dashboard', { replace: true });
+    }
 
     setLoading(false);
   };
@@ -186,7 +193,6 @@ const LoginForm: React.FC = () => {
 };
 
 export default LoginForm;
-
 
 
 

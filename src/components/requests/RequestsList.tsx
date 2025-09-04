@@ -1,9 +1,11 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 import { Calendar, Clock, FileText, Eye, CheckCircle, XCircle } from 'lucide-react';
 
 const RequestsList: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { requests } = useApp();
 
@@ -66,7 +68,10 @@ const RequestsList: React.FC = () => {
             Historial y estado de todas tus solicitudes
           </p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          onClick={() => navigate('/requests/new')}
+        >
           Nueva Solicitud
         </button>
       </div>

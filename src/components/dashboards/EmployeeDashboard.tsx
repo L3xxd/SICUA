@@ -1,17 +1,16 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Calendar, FileText, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { Calendar, FileText, Clock, CheckCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 const EmployeeDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { requests } = useApp();
-  const navigate = useNavigate();
 
-  const myRequests = requests.filter((r) => r.employeeId === currentUser?.id);
-  const pendingRequests = myRequests.filter((r) => r.status === 'pending').length;
-  const approvedRequests = myRequests.filter((r) => r.status === 'approved').length;
+  const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
+  const pendingRequests = myRequests.filter(r => r.status === 'pending').length;
+  const approvedRequests = myRequests.filter(r => r.status === 'approved').length;
 
   const stats = [
     {
@@ -45,7 +44,6 @@ const EmployeeDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
           Bienvenido, {currentUser?.name}
@@ -67,9 +65,7 @@ const EmployeeDashboard: React.FC = () => {
                 <h3 className="text-sm font-medium text-gray-500">{stat.title}</h3>
                 <p className="text-2xl font-semibold text-gray-900">
                   {stat.value}
-                  {stat.total !== undefined && (
-                    <span className="text-sm text-gray-500">/{stat.total}</span>
-                  )}
+                  {stat.total && <span className="text-sm text-gray-500">/{stat.total}</span>}
                 </p>
               </div>
             </div>
@@ -77,108 +73,74 @@ const EmployeeDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Acciones rápidas */}
+      {/* Quick actions */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => navigate('/requests')}
-            className="p-4 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
-          >
+          <Link to="/requests/new" className="p-4 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left block">
             <Calendar className="h-8 w-8 text-blue-600 mb-2" />
             <h3 className="font-medium text-gray-900">Solicitar Vacaciones</h3>
             <p className="text-sm text-gray-500">Programa tus días libres</p>
-          </button>
+          </Link>
 
-          <button
-            onClick={() => navigate('/requests')}
-            className="p-4 border border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left"
-          >
+          <Link to="/requests/new" className="p-4 border border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left block">
             <Clock className="h-8 w-8 text-green-600 mb-2" />
             <h3 className="font-medium text-gray-900">Solicitar Permiso</h3>
             <p className="text-sm text-gray-500">Permisos por horas o días</p>
-          </button>
+          </Link>
 
-          <button
-            onClick={() => navigate('/requests')}
-            className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
-          >
+          <Link to="/requests" className="p-4 border border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left block">
             <FileText className="h-8 w-8 text-purple-600 mb-2" />
             <h3 className="font-medium text-gray-900">Ver Mis Solicitudes</h3>
             <p className="text-sm text-gray-500">Historial y estado</p>
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* Solicitudes recientes */}
+      {/* Recent requests */}
       {recentRequests.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Solicitudes Recientes</h2>
           <div className="space-y-4">
-            {recentRequests.map((request) => {
-              const iconColor =
-                request.type === 'vacation'
-                  ? 'text-blue-600'
-                  : request.type === 'permission'
-                  ? 'text-green-600'
-                  : 'text-purple-600';
-
-              const badgeClass =
-                request.status === 'approved'
-                  ? 'bg-green-100 text-green-800'
-                  : request.status === 'pending'
-                  ? 'bg-orange-100 text-orange-800'
-                  : request.status === 'rejected'
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-gray-100 text-gray-800';
-
-              const bgClass =
-                request.type === 'vacation'
-                  ? 'bg-blue-100'
-                  : request.type === 'permission'
-                  ? 'bg-green-100'
-                  : 'bg-purple-100';
-
-              return (
-                <div
-                  key={request.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex items-center">
-                    <div className={`p-2 rounded-lg ${bgClass}`}>
-                      {request.type === 'vacation' ? (
-                        <Calendar className={`h-4 w-4 ${iconColor}`} />
-                      ) : (
-                        <Clock className={`h-4 w-4 ${iconColor}`} />
-                      )}
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium text-gray-900">
-                        {request.type === 'vacation'
-                          ? 'Vacaciones'
-                          : request.type === 'permission'
-                          ? 'Permiso'
-                          : 'Licencia'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {request.startDate} - {request.endDate} ({request.days} días)
-                      </p>
-                    </div>
+            {recentRequests.map((request) => (
+              <div key={request.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center">
+                  <div className={`p-2 rounded-lg ${
+                    request.type === 'vacation' ? 'bg-blue-100' :
+                    request.type === 'permission' ? 'bg-green-100' : 'bg-purple-100'
+                  }`}>
+                    {request.type === 'vacation' ? (
+                      <Calendar className={`h-4 w-4 text-blue-600`} />
+                    ) : request.type === 'permission' ? (
+                      <Clock className={`h-4 w-4 text-green-600`} />
+                    ) : (
+                      <Clock className={`h-4 w-4 text-purple-600`} />
+                    )}
                   </div>
-                  <div className="flex items-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${badgeClass}`}>
-                      {request.status === 'approved'
-                        ? 'Aprobado'
-                        : request.status === 'pending'
-                        ? 'Pendiente'
-                        : request.status === 'rejected'
-                        ? 'Rechazado'
-                        : 'En revisión'}
-                    </span>
+                  <div className="ml-4">
+                    <p className="font-medium text-gray-900">
+                      {request.type === 'vacation' ? 'Vacaciones' : 
+                       request.type === 'permission' ? 'Permiso' : 'Licencia'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {request.startDate} - {request.endDate} ({request.days} días)
+                    </p>
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    request.status === 'pending' ? 'bg-orange-100 text-orange-800' :
+                    request.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {request.status === 'approved' ? 'Aprobado' :
+                     request.status === 'pending' ? 'Pendiente' :
+                     request.status === 'rejected' ? 'Rechazado' : 'En revisión'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -187,3 +149,5 @@ const EmployeeDashboard: React.FC = () => {
 };
 
 export default EmployeeDashboard;
+
+
