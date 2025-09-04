@@ -7,6 +7,8 @@ import RequestsList from './components/requests/RequestsList';
 import Dashboard from './components/Dashboard';
 import LoginForm from './components/LoginForm';
 import CalendarView from './components/CalendarView';
+import ApprovalsView from './components/ApprovalsView';
+import TeamView from './components/TeamView';
 
 const App: React.FC = () => {
   return (
@@ -29,7 +31,8 @@ const App: React.FC = () => {
 
           {/* Otras rutas del sidebar */}
           <Route path="calendar" element={<CalendarView />} />
-          <Route path="team" element={<div>Mi equipo</div>} />
+          <Route path="approvals" element={<ApprovalsView />} />
+          <Route path="team" element={<TeamView />} />
           <Route path="reports" element={<div>Reportes</div>} />
           <Route path="employees" element={<div>Gestión de empleados</div>} />
         </Route>

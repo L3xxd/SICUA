@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { mockUsers } from '../data/mockData';
-import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, Eye } from 'lucide-react';
 
 const ApprovalsView: React.FC = () => {
   const { currentUser } = useAuth();
