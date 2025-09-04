@@ -9,7 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { currentUser } = useAuth();
-  const { notifications, markNotificationAsRead } = useApp();
+  const { notifications, markNotificationAsRead, searchQuery, setSearchQuery } = useApp();
 
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -57,6 +57,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 <input
                   type="text"
                   placeholder="Buscar empleados, solicitudes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 w-64 md:w-80 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

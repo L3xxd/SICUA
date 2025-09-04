@@ -27,6 +27,12 @@ export interface Request {
   rejectionReason?: string;
   days: number;
   urgent: boolean;
+  history?: Array<{
+    action: 'approved' | 'rejected';
+    by: string;
+    date: string;
+    reason?: string;
+  }>;
 }
 
 export interface Notification {
