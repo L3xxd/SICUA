@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -10,6 +10,27 @@ const RequestsList: React.FC = () => {
   const { requests } = useApp();
 
   const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
+
+  // Filtros
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [fromDate, setFromDate] = useState<string>('');
+  const [toDate, setToDate] = useState<string>('');
+
+  const filtered = useMemo(() => {
+    const from = fromDate ? new Date(fromDate) : null;
+    const to = toDate ? new Date(toDate) : null;
+    return myRequests.filter((r) => {
+      const matchesType = !typeFilter || r.type === typeFilter;
+      const matchesStatus = !statusFilter || r.status === statusFilter;
+      const start = new Date(r.startDate);
+      const end = new Date(r.endDate || r.startDate);
+      const afterFrom = !from || start >= from;
+      const beforeTo = !to || end <= to;
+      const matchesDate = afterFrom && beforeTo;
+      return matchesType && matchesStatus && matchesDate;
+    });
+  }, [myRequests, typeFilter, statusFilter, fromDate, toDate]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -78,30 +99,74 @@ const RequestsList: React.FC = () => {
 
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-wrap gap-4">
-          <select className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">Todos los tipos</option>
-            <option value="vacation">Vacaciones</option>
-            <option value="permission">Permisos</option>
-            <option value="leave">Licencias</option>
-          </select>
-          <select className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">Todos los estados</option>
-            <option value="pending">Pendiente</option>
-            <option value="approved">Aprobado</option>
-            <option value="rejected">Rechazado</option>
-          </select>
-          <input
-            type="date"
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Fecha desde"
-          />
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1" htmlFor="typeFilter">Tipo</label>
+            <select
+              id="typeFilter"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Filtrar por tipo"
+            >
+              <option value="">Todos los tipos</option>
+              <option value="vacation">Vacaciones</option>
+              <option value="permission">Permisos</option>
+              <option value="leave">Licencias</option>
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1" htmlFor="statusFilter">Estado</label>
+            <select
+              id="statusFilter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Filtrar por estado"
+            >
+              <option value="">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobado</option>
+              <option value="rejected">Rechazado</option>
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1" htmlFor="fromDate">Desde</label>
+            <input
+              id="fromDate"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Fecha desde"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1" htmlFor="toDate">Hasta</label>
+            <input
+              id="toDate"
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Fecha hasta"
+            />
+          </div>
+          {(typeFilter || statusFilter || fromDate || toDate) && (
+            <button
+              type="button"
+              onClick={() => { setTypeFilter(''); setStatusFilter(''); setFromDate(''); setToDate(''); }}
+              className="text-sm text-gray-600 hover:text-gray-900 underline"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
       {/* Requests list */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {myRequests.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tienes solicitudes</h3>
@@ -109,7 +174,7 @@ const RequestsList: React.FC = () => {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {myRequests.map((request) => {
+            {filtered.map((request) => {
               const TypeIcon = getTypeIcon(request.type);
               return (
                 <div key={request.id} className="p-6 hover:bg-gray-50 transition-colors">
