@@ -1,16 +1,12 @@
+// src/components/DesktopSidebar.tsx
 import React from 'react';
 import { NavLink } from './NavLink';
 import { useAuth } from '../context/AuthContext';
 import {
-  Home, Calendar, FileText, Users, BarChart3, Settings, LogOut, X, CheckSquare, Clock,
+  Home, Calendar, FileText, Users, BarChart3, Settings, LogOut, CheckSquare, Clock,
 } from 'lucide-react';
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const DesktopSidebar: React.FC = () => {
   const { currentUser, logout } = useAuth();
 
   const getNavigationItems = () => {
@@ -41,22 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <>
-      {/* Overlay: solo móvil */}
-      <div
-        className={`fixed inset-0 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`}
-        onClick={onClose}
-      >
-        <div className="fixed inset-0 bg-black/25" />
-      </div>
-
-      {/* Panel: solo móvil */}
-      <div
-        className={`fixed top-0 left-0 z-50 w-64 h-dvh bg-white border-r border-gray-200 rounded-none shadow-none
-        transform transition-transform duration-300 ease-in-out lg:hidden
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        flex flex-col`}
-      >
+    <aside className="hidden lg:flex w-64 shrink-0 h-dvh sticky top-0 bg-white border-r border-gray-200">
+      <div className="w-64 h-dvh flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center">
@@ -65,13 +47,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
             <h1 className="ml-3 text-lg font-semibold text-gray-900">SGP</h1>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            aria-label="Cerrar menú"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
 
         {/* User info */}
@@ -89,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navegación */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {getNavigationItems().map(item => (
             <NavLink key={item.name} href={item.href} icon={item.icon} name={item.name} />
@@ -107,9 +82,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
       </div>
-    </>
+    </aside>
   );
 };
 
-export default Sidebar;
-
+export default DesktopSidebar;

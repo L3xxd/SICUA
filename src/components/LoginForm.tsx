@@ -37,7 +37,7 @@ const LoginForm: React.FC = () => {
             <LogIn className="h-8 w-8 text-white" />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Sistema de Gestión de Personal
+            Sistema de Control de Usuarios y Administración
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Accede a tu cuenta corporativa
