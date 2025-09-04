@@ -155,16 +155,24 @@ const CalendarView: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* Scope selector (oculto para empleados) */}
           {!isEmployeeView && (
-            <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1 mr-2">
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#2C2C2C] rounded-md p-1 mr-2">
               <button
                 onClick={() => setScope('personal')}
-                className={`px-3 py-1 text-sm rounded ${scope === 'personal' ? 'bg-white shadow text-gray-900' : 'text-gray-600'}`}
+                className={`px-3 py-1 text-sm rounded transition-colors ${
+                  scope === 'personal'
+                    ? 'bg-white text-gray-900 shadow dark:bg-[var(--accent-primary)] dark:text-[var(--text-primary)]'
+                    : 'text-gray-600 dark:text-[var(--text-secondary)]'
+                }`}
               >
                 Mis solicitudes
               </button>
               <button
                 onClick={() => setScope('asociado')}
-                className={`px-3 py-1 text-sm rounded ${scope === 'asociado' ? 'bg-white shadow text-gray-900' : 'text-gray-600'}`}
+                className={`px-3 py-1 text-sm rounded transition-colors ${
+                  scope === 'asociado'
+                    ? 'bg-white text-gray-900 shadow dark:bg-[var(--accent-primary)] dark:text-[var(--text-primary)]'
+                    : 'text-gray-600 dark:text-[var(--text-secondary)]'
+                }`}
               >
                 {isSupervisorView ? 'Equipo' : 'Organización'}
               </button>
@@ -172,16 +180,24 @@ const CalendarView: React.FC = () => {
           )}
 
           {/* View selector */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#2C2C2C] rounded-md p-1">
             <button
               onClick={() => setView('month')}
-              className={`px-3 py-1 text-sm rounded ${view === 'month' ? 'bg-white shadow text-gray-900' : 'text-gray-600'}`}
+              className={`px-3 py-1 text-sm rounded transition-colors ${
+                view === 'month'
+                  ? 'bg-white text-gray-900 shadow dark:bg-[var(--accent-primary)] dark:text-[var(--text-primary)]'
+                  : 'text-gray-600 dark:text-[var(--text-secondary)]'
+              }`}
             >
               Mensual
             </button>
             <button
               onClick={() => setView('year')}
-              className={`px-3 py-1 text-sm rounded ${view === 'year' ? 'bg-white shadow text-gray-900' : 'text-gray-600'}`}
+              className={`px-3 py-1 text-sm rounded transition-colors ${
+                view === 'year'
+                  ? 'bg-white text-gray-900 shadow dark:bg-[var(--accent-primary)] dark:text-[var(--text-primary)]'
+                  : 'text-gray-600 dark:text-[var(--text-secondary)]'
+              }`}
             >
               Anual
             </button>

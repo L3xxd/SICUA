@@ -19,6 +19,67 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Design tokens via CSS variables */
+:root {
+  --bg-main: #f9fafb;
+  --bg-panel: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --accent-primary: #2563eb;
+  --accent-secondary: #9333ea;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --error: #dc2626;
+  --hover: #3b82f6;
+  --modal-bg: rgba(0,0,0,0.45);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg-main: #121212;
+  --bg-panel: #1E1E1E;
+  --text-primary: #E0E0E0;
+  --text-secondary: #A0A0A0;
+  --border: #2C2C2C;
+  --accent-primary: #3498DB; /* mejor contraste en fondo oscuro */
+  --accent-secondary: #6A0DAD;
+  --success: #16A085;
+  --warning: #F1C40F;
+  --error: #E74C3C;
+  --hover: #3498DB;
+  --modal-bg: rgba(18,18,18,0.9);
+}
+
+.dark body { background-color: var(--bg-main); }
+
+/* Global element theming */
+.dark .bg-white { background-color: var(--bg-panel) !important; }
+.dark .bg-gray-50 { background-color: var(--bg-main) !important; }
+.dark .text-gray-900 { color: var(--text-primary) !important; }
+.dark .text-gray-700 { color: var(--text-secondary) !important; }
+.dark .text-gray-600 { color: var(--text-secondary) !important; }
+.dark .text-gray-500 { color: var(--text-secondary) !important; }
+.dark .text-gray-400 { color: var(--text-secondary) !important; }
+.dark .border-gray-200 { border-color: var(--border) !important; }
+.dark .border-gray-300 { border-color: var(--border) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #1f1f1f !important; }
+
+/* Accent helpers */
+.dark .text-blue-700 { color: var(--accent-primary) !important; }
+.dark .text-blue-600 { color: var(--accent-primary) !important; }
+.dark .bg-blue-50 { background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent) !important; }
+.dark .bg-blue-100 { background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent) !important; }
+
+/* Form controls */
+.dark input,
+.dark select,
+.dark textarea { background-color: var(--bg-panel); color: var(--text-primary); border-color: var(--border); }
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--hover) 40%, transparent); border-color: var(--hover); }
+.dark ::placeholder { color: var(--text-secondary); }
+
 /* Animaciones personalizadas */
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(20px); }

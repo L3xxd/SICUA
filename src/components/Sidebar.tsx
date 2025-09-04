@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Calendar, Users, BarChart3, Settings, LogOut, Clock , CheckSquare, X} from 'lucide-react';
+import { Home, FileText, Calendar, Users, BarChart3, Settings, LogOut, Clock , CheckSquare, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
@@ -60,37 +60,37 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 w-64 h-full lg:h-screen bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 w-64 h-full lg:h-screen bg-white dark:bg-[var(--bg-panel)] border-r border-gray-200 dark:border-[var(--border)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } flex flex-col`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-[var(--border)]">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Users className="h-5 w-5 text-white" />
+            <div className="h-6 w-6 bg-blue-600 rounded-lg flex items-center justify-center dark:bg-[var(--accent-primary)]">
+              <Users className="h-4 w-4 text-white" />
             </div>
-            <h1 className="ml-3 text-lg font-semibold text-gray-900">SGP</h1>
+            <h1 className="ml-3 text-xl font-semibold text-gray-900 dark:text-[var(--text-primary)]">SICUA</h1>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-[color-mix(in_srgb,var(--hover)_12%,transparent)] dark:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* User info */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-[var(--border)]">
           <div className="flex items-center">
-            <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-medium">
+            <div className="h-12 w-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]">
+              <span className="text-blue-600 dark:text-[var(--accent-primary)] font-medium">
                 {currentUser?.name.split(' ').map(n => n[0]).join('')}
               </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{currentUser?.name}</p>
-              <p className="text-xs text-gray-500">{currentUser?.position}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-[var(--text-primary)]">{currentUser?.name}</p>
+              <p className="text-xs text-gray-500 dark:text-[var(--text-secondary)]">{currentUser?.position}</p>
             </div>
           </div>
         </div>
@@ -103,21 +103,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               to={item.href}
               className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 pathname === item.href
-                  ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-600'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-blue-100 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-blue-700 dark:text-[var(--text-primary)] border-r-2 border-blue-600 dark:border-[var(--accent-primary)]'
+              : 'text-gray-700 dark:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-[#2C2C2C] hover:text-gray-900 dark:hover:text-[var(--hover)]'
               }`}
             >
-              <item.icon className={`h-5 w-5 mr-3 ${pathname === item.href ? 'text-blue-600' : 'text-gray-400'}`} />
+              <item.icon className={`h-5 w-5 mr-3 ${pathname === item.href ? 'text-blue-600 dark:text-[var(--accent-primary)]' : 'text-gray-400 dark:text-[var(--text-secondary)]'}`} />
               {item.name}
             </Link>
           ))}
         </nav>
 
         {/* Logout button */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 dark:border-[var(--border)]">
           <button
             onClick={logout}
-            className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)] rounded-md hover:bg-gray-100 dark:hover:bg-[#2C2C2C] hover:text-gray-900 dark:hover:text-[var(--text-primary)] transition-colors"
           >
             <LogOut className="h-5 w-5 mr-3" />
             Cerrar Sesión

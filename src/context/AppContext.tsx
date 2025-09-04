@@ -17,6 +17,8 @@ interface AppContextType {
   updateUser: (id: string, patch: Partial<User>) => void;
   updatePolicy: (id: string, patch: Partial<PolicyRule>) => void;
   addPolicyHistory: (entries: PolicyChange[]) => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -40,6 +42,16 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [policies, setPolicies] = useState<PolicyRule[]>(mockPolicies);
   const [policyHistory, setPolicyHistory] = useState<PolicyChange[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => (typeof window !== 'undefined' && (localStorage.getItem('theme') as 'light'|'dark')) || 'light');
+
+  React.useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (theme === 'dark') root.classList.add('dark');
+      else root.classList.remove('dark');
+      try { localStorage.setItem('theme', theme); } catch {}
+    }
+  }, [theme]);
 
   const addRequest = (requestData: Omit<Request, 'id' | 'requestDate'>) => {
     const newRequest: Request = {
@@ -96,6 +108,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setPolicyHistory(prev => [...entries, ...prev].slice(0, 500));
   };
 
+  const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
+
   return (
     <AppContext.Provider value={{
       requests,
@@ -112,6 +126,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       updateUser,
       updatePolicy,
       addPolicyHistory,
+      theme,
+      toggleTheme,
     }}>
       {children}
     </AppContext.Provider>

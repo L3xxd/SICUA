@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import { Moon, Sun } from 'lucide-react';
 
 type QuickLogin = {
   role: string;
@@ -29,6 +31,7 @@ const LoginForm: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { theme, toggleTheme } = useApp();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,38 +50,50 @@ const LoginForm: React.FC = () => {
   };
 
   const quickLoginOptions: QuickLogin[] = [
-    { role: 'Empleado',   email: 'empleado@empresa.com',   color: 'bg-blue-50 hover:bg-blue-100 text-blue-700',       icon: User },
-    { role: 'Supervisor', email: 'supervisor@empresa.com', color: 'bg-green-50 hover:bg-green-100 text-green-700',    icon: ShieldCheck },
-    { role: 'RRHH',       email: 'admin@empresa.com',      color: 'bg-purple-50 hover:bg-purple-100 text-purple-700', icon: Users },
-    { role: 'Director',   email: 'director@empresa.com',   color: 'bg-orange-50 hover:bg-orange-100 text-orange-700', icon: Briefcase },
+    { role: 'Empleado',   email: 'empleado@empresa.com',   color: 'bg-blue-50 hover:bg-blue-100 text-gray-700 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] dark:text-[var(--text-primary)]',       icon: User },
+    { role: 'Supervisor', email: 'supervisor@empresa.com', color: 'bg-green-50 hover:bg-green-100 text-gray-700 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] dark:text-[var(--text-primary)]',    icon: ShieldCheck },
+    { role: 'RRHH',       email: 'admin@empresa.com',      color: 'bg-purple-50 hover:bg-purple-100 text-gray-700 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] dark:text-[var(--text-primary)]', icon: Users },
+    { role: 'Director',   email: 'director@empresa.com',   color: 'bg-orange-50 hover:bg-orange-100 text-gray-700 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] dark:text-[var(--text-primary)]', icon: Briefcase },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-[var(--bg-main)] dark:from-transparent dark:to-transparent flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Toggle de tema */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex items-center p-3 md:p-3 rounded-full text-gray-600 dark:text-[var(--text-secondary)] hover:opacity-80 focus:outline-none focus:ring-0 transition"
+            aria-label="Cambiar tema"
+            title={theme === 'dark' ? 'Cambiar a claro' : 'Cambiar a oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+          </button>
+        </div>
         {/* Encabezado con logo */}
         <div className="text-center">
           <div className="flex justify-center">
             <img
-              src="/icono.png"
+              src="/icono-big.png"
               alt="SICUA"
               className="w-16 sm:w-20 md:w-24 h-auto rounded-2xl shadow-md max-w-full"
               loading="eager"
             />
           </div>
 
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-[var(--text-primary)]">
             Sistema de Control de Usuarios y Administración
           </h2>
-          <p className="mt-2 text-sm text-gray-600">Accede a tu cuenta corporativa</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-[var(--text-secondary)]">Accede a tu cuenta corporativa</p>
         </div>
 
         {/* Tarjeta de formulario */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-[var(--bg-panel)] border border-gray-200 dark:border-[var(--border)] rounded-lg shadow-lg p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)]">
                 Correo electrónico
               </label>
               <div className="mt-1 relative">
@@ -93,7 +108,7 @@ const LoginForm: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[var(--border)] dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] rounded-md shadow-sm placeholder-gray-400 dark:placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="usuario@empresa.com"
                 />
               </div>
@@ -101,7 +116,7 @@ const LoginForm: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)]">
                 Contraseña
               </label>
               <div className="mt-1 relative">
@@ -116,7 +131,7 @@ const LoginForm: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-[var(--border)] dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] rounded-md shadow-sm placeholder-gray-400 dark:placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Tu contraseña"
                 />
                 <button
@@ -136,7 +151,7 @@ const LoginForm: React.FC = () => {
 
             {/* Error */}
             {error && (
-              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+              <div className="text-red-600 text-sm bg-red-50 dark:bg-[#E74C3C22] p-3 rounded-md">
                 {error}
               </div>
             )}
@@ -156,10 +171,10 @@ const LoginForm: React.FC = () => {
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-gray-300 dark:border-[var(--border)]" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Acceso rápido de demostración</span>
+                <span className="px-2 bg-white dark:bg-[var(--bg-panel)] text-gray-500 dark:text-[var(--text-secondary)]">Acceso rápido de demostración</span>
               </div>
             </div>
 
@@ -182,7 +197,7 @@ const LoginForm: React.FC = () => {
               })}
             </div>
 
-            <p className="mt-4 text-xs text-gray-500 text-center">
+            <p className="mt-4 text-xs text-gray-500 dark:text-[var(--text-secondary)] text-center">
               Contraseña para todas las cuentas: "password"
             </p>
           </div>
@@ -193,6 +208,3 @@ const LoginForm: React.FC = () => {
 };
 
 export default LoginForm;
-
-
-
