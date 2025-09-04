@@ -2,8 +2,18 @@ import React from 'react';
 import { NavLink } from './NavLink';
 import { useAuth } from '../context/AuthContext';
 import {
-  Home, Calendar, FileText, Users, BarChart3, Settings, LogOut, X, CheckSquare, Clock,
+  Home,
+  Calendar,
+  FileText,
+  Users,
+  BarChart3,
+  Settings,
+  LogOut,
+  X,
+  CheckSquare,
+  Clock,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,50 +22,65 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const getNavigationItems = () => {
     const baseItems = [
-      { name: 'Dashboard', href: 'dashboard', icon: Home },
-      { name: 'Mis Solicitudes', href: 'requests', icon: FileText },
-      { name: 'Calendario', href: 'calendar', icon: Calendar },
+      { name: 'Dashboard', to: '/dashboard', icon: Home },
+      { name: 'Mis Solicitudes', to: '/requests', icon: FileText },
+      { name: 'Calendario', to: '/calendar', icon: Calendar },
     ];
+
     const supervisorItems = [
-      { name: 'Aprobar Solicitudes', href: 'approvals', icon: CheckSquare },
-      { name: 'Mi Equipo', href: 'team', icon: Users },
+      { name: 'Aprobar Solicitudes', to: '/approvals', icon: CheckSquare },
+      { name: 'Mi Equipo', to: '/team', icon: Users }, // crea esta ruta más adelante o quita este ítem
     ];
+
     const hrItems = [
-      { name: 'Gestión de Empleados', href: 'employees', icon: Users },
-      { name: 'Reportes', href: 'reports', icon: BarChart3 },
-      { name: 'Políticas', href: 'policies', icon: Settings },
+      { name: 'Gestión de Empleados', to: '/employees', icon: Users },
+      { name: 'Reportes', to: '/reports', icon: BarChart3 },
+      { name: 'Políticas', to: '/policies', icon: Settings },
     ];
+
     const directorItems = [
-      { name: 'Reportes Ejecutivos', href: 'executive-reports', icon: BarChart3 },
-      { name: 'Análisis Predictivo', href: 'analytics', icon: Clock },
+      { name: 'Reportes Ejecutivos', to: '/executive-reports', icon: BarChart3 },
+      { name: 'Análisis Predictivo', to: '/analytics', icon: Clock },
     ];
 
     let items = [...baseItems];
-    if (['supervisor', 'hr', 'director'].includes(currentUser?.role ?? '')) items = [...items, ...supervisorItems];
-    if (['hr', 'director'].includes(currentUser?.role ?? '')) items = [...items, ...hrItems];
-    if (currentUser?.role === 'director') items = [...items, ...directorItems];
+    if (currentUser?.role === 'supervisor' || currentUser?.role === 'hr' || currentUser?.role === 'director') {
+      items = [...items, ...supervisorItems];
+    }
+    if (currentUser?.role === 'hr' || currentUser?.role === 'director') {
+      items = [...items, ...hrItems];
+    }
+    if (currentUser?.role === 'director') {
+      items = [...items, ...directorItems];
+    }
     return items;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (
     <>
-      {/* Overlay: solo móvil */}
+      {/* Overlay móvil */}
       <div
         className={`fixed inset-0 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`}
         onClick={onClose}
       >
-        <div className="fixed inset-0 bg-black/25" />
+        <div className="fixed inset-0 bg-black bg-opacity-25" />
       </div>
 
-      {/* Panel: solo móvil */}
-      <div
-        className={`fixed top-0 left-0 z-50 w-64 h-dvh bg-white border-r border-gray-200 rounded-none shadow-none
-        transform transition-transform duration-300 ease-in-out lg:hidden
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        flex flex-col`}
+      {/* Sidebar único (móvil + desktop) */}
+      <aside
+        className={`fixed top-0 left-0 z-50 w-64 h-full bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+              flex flex-col
+              ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+              lg:translate-x-0`}
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
@@ -67,8 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            aria-label="Cerrar menú"
+            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
           >
             <X className="h-5 w-5" />
           </button>
@@ -89,27 +113,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {getNavigationItems().map(item => (
-            <NavLink key={item.name} href={item.href} icon={item.icon} name={item.name} />
+        {/* Navegación */}
+        <nav className="flex-1 px-2 py-4 space-y-1">
+          {getNavigationItems().map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.to}
+              icon={item.icon}
+              name={item.name}
+              onClick={onClose} // en móvil cierra el sidebar al navegar
+            />
           ))}
         </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-gray-200">
+        {/* Logout pegado abajo */}
+        <div className="p-4 border-t border-gray-200 mt-auto">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <LogOut className="h-5 w-5 mr-3" />
             Cerrar Sesión
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 };
 
 export default Sidebar;
-
