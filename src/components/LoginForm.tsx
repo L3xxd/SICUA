@@ -38,11 +38,10 @@ const LoginForm: React.FC = () => {
     setLoading(true);
     setError('');
 
-    const success = login(email, password);
+    const success = await login(email, password);
     if (!success) {
       setError('Credenciales inválidas');
     } else {
-      // Ir al dashboard tras iniciar sesión
       navigate('/dashboard', { replace: true });
     }
 

@@ -14,6 +14,10 @@ const EmployeesManagement: React.FC = () => {
   const [editPosition, setEditPosition] = useState<string>('');
   const [editDept, setEditDept] = useState<string>('');
   const [editSupervisorId, setEditSupervisorId] = useState<string>('');
+  const [editPhone, setEditPhone] = useState<string>('');
+  const [editHireDate, setEditHireDate] = useState<string>('');
+  const [editContractType, setEditContractType] = useState<'fijo'|'temporal'|''>('');
+  const [editBarcode, setEditBarcode] = useState<string>('');
   const [vacTotal, setVacTotal] = useState<number>(0);
   const [vacUsed, setVacUsed] = useState<number>(0);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
@@ -30,6 +34,10 @@ const EmployeesManagement: React.FC = () => {
   const [cVacUsed, setCVacUsed] = useState(0);
   const [cPass, setCPass] = useState('');
   const [cPass2, setCPass2] = useState('');
+  const [cPhone, setCPhone] = useState('');
+  const [cHireDate, setCHireDate] = useState('');
+  const [cContractType, setCContractType] = useState<'fijo'|'temporal'|''>('');
+  const [cBarcode, setCBarcode] = useState('');
   const emailValid = useMemo(() => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(cEmail.trim()), [cEmail]);
   const emailExists = useMemo(() => users.some(u => u.email.toLowerCase() === cEmail.trim().toLowerCase()), [users, cEmail]);
   const supervisorsByDeptCreate = useMemo(() => users.filter(u => u.role === 'supervisor' && u.department === cDept), [users, cDept]);
@@ -87,6 +95,10 @@ const EmployeesManagement: React.FC = () => {
     setEditPosition(u.position);
     setEditDept(u.department);
     setEditSupervisorId(u.supervisorId || '');
+    setEditPhone((u as any).phone || '');
+    setEditHireDate((u as any).hireDate ? String((u as any).hireDate).slice(0,10) : '');
+    setEditContractType((((u as any).contractType as any) || '') as any);
+    setEditBarcode((u as any).barcode || '');
     setVacTotal(u.vacationDays);
     setVacUsed(u.usedVacationDays);
   };
@@ -194,6 +206,29 @@ const EmployeesManagement: React.FC = () => {
                 <input type="text" value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
               </label>
               <div className="grid grid-cols-2 gap-3">
+                <label className="block">Teléfono
+                  <input type="tel" value={editPhone} onChange={(e)=>setEditPhone(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
+                </label>
+                <label className="block">Fecha de ingreso
+                  <input type="date" value={editHireDate} onChange={(e)=>setEditHireDate(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
+                </label>
+              </div>
+              <label className="block">Tipo de contrato
+                <select value={editContractType} onChange={(e)=>setEditContractType(e.target.value as any)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2">
+                  <option value="">Seleccione…</option>
+                  <option value="fijo">Fijo</option>
+                  <option value="temporal">Temporal</option>
+                </select>
+              </label>
+              <label className="block">Código de barras
+                <div className="mt-1 flex gap-2">
+                  <input type="text" value={editBarcode} onChange={(e)=>setEditBarcode(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2" />
+                </div>
+                {editBarcode && users.some(u => u.id !== editId && (u as any).barcode === editBarcode) && (
+                  <p className="mt-1 text-xs text-red-600">Este código de barras ya existe.</p>
+                )}
+              </label>
+              <div className="grid grid-cols-2 gap-3">
                 <label className="block">Departamento
                   <select
                     value={editDept}
@@ -230,6 +265,16 @@ const EmployeesManagement: React.FC = () => {
                   <input type="number" min={0} value={vacUsed} onChange={(e) => setVacUsed(parseInt(e.target.value || '0', 10))} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
                 </label>
               </div>
+              {editHireDate && (
+                <div className="text-xs text-gray-600">Antigüedad: {(() => {
+                  const hd = new Date(editHireDate);
+                  const now = new Date();
+                  let years = now.getFullYear() - hd.getFullYear();
+                  const m = now.getMonth() - hd.getMonth();
+                  if (m < 0 || (m === 0 && now.getDate() < hd.getDate())) years--;
+                  return `${years} año${years === 1 ? '' : 's'}`;
+                })()}</div>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between">
               <button onClick={() => setVacUsed(0)} className="text-sm text-gray-600 inline-flex items-center"><RefreshCw className="h-4 w-4 mr-1"/>Reiniciar usadas</button>
@@ -239,7 +284,8 @@ const EmployeesManagement: React.FC = () => {
                   const invalidSelf = editSupervisorId && editSupervisorId === editId;
                   const validSupervisor = !editSupervisorId || supervisors.some(s => s.id === editSupervisorId && s.department === editDept);
                   const invalidDownline = editSupervisorId ? downlineIds.has(editSupervisorId) : false;
-                  const canSave = !!editName.trim() && !!editPosition.trim() && validSupervisor && !invalidSelf && !invalidDownline;
+                  const barcodeTaken = !!(editBarcode && users.some(u => u.id !== editId && (u as any).barcode === editBarcode));
+                  const canSave = !!editName.trim() && !!editPosition.trim() && validSupervisor && !invalidSelf && !invalidDownline && !barcodeTaken;
                   return (
                     <button onClick={saveEdit} disabled={!canSave} className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white disabled:opacity-60">Guardar</button>
                   );
@@ -269,6 +315,12 @@ const EmployeesManagement: React.FC = () => {
                   <p className="mt-1 text-xs text-red-500">Este correo ya está registrado.</p>
                 )}
               </label>
+              <label className="block">Teléfono
+                <input className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cPhone} onChange={e=>setCPhone(e.target.value)} />
+              </label>
+              <label className="block">Fecha de ingreso
+                <input type="date" className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cHireDate} onChange={e=>setCHireDate(e.target.value)} />
+              </label>
               <label className="block">Rol
                 <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cRole} onChange={e=>setCRole(e.target.value as any)}>
                   <option value="employee">Empleado</option>
@@ -284,6 +336,25 @@ const EmployeesManagement: React.FC = () => {
               </label>
               <label className="block sm:col-span-2">Puesto
                 <input className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cPosition} onChange={e=>setCPosition(e.target.value)} />
+              </label>
+              <label className="block sm:col-span-2">Tipo de contrato
+                <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cContractType} onChange={e=>setCContractType(e.target.value as any)}>
+                  <option value="">Seleccione…</option>
+                  <option value="fijo">Fijo</option>
+                  <option value="temporal">Temporal</option>
+                </select>
+              </label>
+              <label className="block sm:col-span-2">Código de barras
+                <div className="mt-1 flex gap-2">
+                  <input className={`w-full border rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] ${cBarcode && users.some(u => (u as any).barcode === cBarcode) ? 'border-red-500' : 'border-gray-300 dark:border-[var(--border)]'}`} value={cBarcode} onChange={e=>setCBarcode(e.target.value)} />
+                  <button type="button" className="px-3 py-2 text-sm rounded-md border border-gray-300" onClick={()=>{
+                    const code = `EMP-${Math.random().toString(36).slice(2,8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+                    setCBarcode(code);
+                  }}>Generar</button>
+                </div>
+                {cBarcode && users.some(u => (u as any).barcode === cBarcode) && (
+                  <p className="mt-1 text-xs text-red-500">Este código ya existe. Genera otro.</p>
+                )}
               </label>
               <label className="block">Supervisor
                 <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cSupervisorId} onChange={e=>setCSupervisorId(e.target.value)}>
@@ -315,16 +386,30 @@ const EmployeesManagement: React.FC = () => {
               <button
                 onClick={()=>{
                   addUser({
-                    name:cName.trim(), email:cEmail.trim(), password: cPass.trim(), role:cRole, department:cDept, position:cPosition.trim(), supervisorId: cSupervisorId||undefined, vacationDays:cVacTotal, usedVacationDays: Math.min(cVacTotal,cVacUsed)
+                    name:cName.trim(),
+                    email:cEmail.trim(),
+                    password: cPass.trim(),
+                    role:cRole,
+                    department:cDept,
+                    position:cPosition.trim(),
+                    supervisorId: cSupervisorId||undefined,
+                    vacationDays:cVacTotal,
+                    usedVacationDays: Math.min(cVacTotal,cVacUsed),
+                    phone: cPhone || undefined,
+                    hireDate: cHireDate ? new Date(cHireDate).toISOString() : undefined,
+                    contractType: (cContractType as any) || undefined,
+                    barcode: cBarcode || undefined,
                   } as any);
                   setCreateOpen(false);
-                  setCName(''); setCEmail(''); setCRole('employee'); setCDept(''); setCPosition(''); setCSupervisorId(''); setCVacTotal(10); setCVacUsed(0); setCPass(''); setCPass2('');
+                  setCName(''); setCEmail(''); setCRole('employee'); setCDept(''); setCPosition(''); setCSupervisorId(''); setCVacTotal(10); setCVacUsed(0); setCPass(''); setCPass2(''); setCPhone(''); setCHireDate(''); setCContractType(''); setCBarcode('');
                 }}
                 disabled={
                   !cName.trim() ||
                   !/[^\s@]+@[^\s@]+\.[^\s@]+/.test(cEmail.trim()) ||
                   users.some(u => u.email.toLowerCase() === cEmail.trim().toLowerCase()) ||
                   !cDept ||
+                  !cContractType ||
+                  !cBarcode || users.some(u => (u as any).barcode === cBarcode) ||
                   cPass.length < 6 ||
                   cPass !== cPass2
                 }
@@ -391,6 +476,10 @@ const EmployeesManagement: React.FC = () => {
                     position: editPosition.trim() || undefined,
                     department: editDept,
                     supervisorId: editSupervisorId || undefined,
+                    phone: editPhone || undefined,
+                    hireDate: editHireDate ? new Date(editHireDate).toISOString() : undefined,
+                    contractType: (editContractType as any) || undefined,
+                    barcode: editBarcode || undefined,
                     vacationDays: vacTotal,
                     usedVacationDays: Math.min(vacTotal, vacUsed),
                   });

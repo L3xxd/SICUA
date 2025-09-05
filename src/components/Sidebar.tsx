@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Calendar, Users, BarChart3, Settings, LogOut, Clock , CheckSquare, X } from 'lucide-react';
+import { Home, FileText, Calendar, Users, BarChart3, Settings, LogOut, Clock, CheckSquare, X, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Mis Solicitudes', href: '/requests', icon: FileText },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
+    { name: 'Datos Personales', href: '/profile', icon: UserIcon },
   ];
 
   const supervisorItems = [
@@ -104,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 pathname === item.href
                   ? 'bg-blue-100 dark:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-blue-700 dark:text-[var(--text-primary)] border-r-2 border-blue-600 dark:border-[var(--accent-primary)]'
-              : 'text-gray-700 dark:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-[#2C2C2C] hover:text-gray-900 dark:hover:text-[var(--hover)]'
+                  : 'text-gray-700 dark:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-[#2C2C2C] hover:text-gray-900 dark:hover:text-[var(--hover)]'
               }`}
             >
               <item.icon className={`h-5 w-5 mr-3 ${pathname === item.href ? 'text-blue-600 dark:text-[var(--accent-primary)]' : 'text-gray-400 dark:text-[var(--text-secondary)]'}`} />

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, FileText, Clock, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 
 type RequestType = 'vacation' | 'permission' | 'leave';
 
@@ -72,11 +73,9 @@ const RequestForm: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const newId = String(Date.now());
       const safeType = type as RequestType;
 
-      const newRequest = {
-        id: newId,
+      const reqPayload = {
         employeeId: currentUser.id,
         employeeName: currentUser.name,
         type: safeType,
@@ -84,24 +83,22 @@ const RequestForm: React.FC = () => {
         endDate,
         reason: reason.trim(),
         status: 'pending' as const,
-        requestDate: new Date().toISOString().slice(0, 16),
         approvedBy: undefined,
         approvedDate: undefined,
         days: totalDays,
         urgent,
-      };
+      } as const;
 
-      addRequest(newRequest);
+      const created = await addRequest(reqPayload as any);
 
-      // Nota: id/createdAt los genera AppContext; no los enviamos aquí.
-      addNotification({
+      await addNotification({
         userId: currentUser.supervisorId || '2',
         title: 'Nueva solicitud',
         message: `${currentUser.name} ha solicitado ${totalDays} día(s) (${safeType === 'vacation' ? 'vacaciones' : safeType === 'permission' ? 'permiso' : 'licencia'})`,
         type: 'request',
         read: false,
-        relatedRequestId: newId,
-      });
+        relatedRequestId: created.id,
+      } as any);
 
       navigate('/requests', { replace: true });
     } finally {

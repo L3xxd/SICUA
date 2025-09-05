@@ -46,7 +46,7 @@ const EmployeeDashboard: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Bienvenido, {currentUser?.name}
+          Bienvenid@, {currentUser?.name}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           Gestiona tus solicitudes de vacaciones y permisos

@@ -1,0 +1,100 @@
+// Prisma schema for SICUA backend (SQLite)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String
+  password         String?
+  role             String
+  department       String
+  position         String
+  supervisorId     String?
+  supervisor       User?     @relation("UserSupervisor", fields: [supervisorId], references: [id])
+  subordinates     User[]    @relation("UserSupervisor")
+  avatar           String?
+  vacationDays     Int       @default(0)
+  usedVacationDays Int       @default(0)
+  phone            String?
+  hireDate         DateTime?
+  contractType     String?
+  barcode          String    @unique
+
+  requests         Request[]
+  notifications    Notification[]
+  // attendances removed (reverted)
+}
+
+model Request {
+  id              String        @id @default(cuid())
+  employeeId      String
+  employee        User          @relation(fields: [employeeId], references: [id])
+  type            String
+  startDate       DateTime
+  endDate         DateTime
+  reason          String
+  status          String        @default("pending")
+  stage           String?
+  supervisorName  String?
+  department      String?
+  requestDate     DateTime      @default(now())
+  approvedBy      String?
+  approvedDate    DateTime?
+  rejectionReason String?
+  days            Int           @default(0)
+  urgent          Boolean       @default(false)
+
+  history         RequestHistory[]
+}
+
+model RequestHistory {
+  id        String        @id @default(cuid())
+  requestId String
+  request   Request       @relation(fields: [requestId], references: [id])
+  action    String
+  by        String
+  date      DateTime      @default(now())
+  reason    String?
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  relatedRequestId String?
+}
+
+model PolicyRule {
+  id               String   @id @default(cuid())
+  type             String
+  minAdvanceDays   Int
+  maxConsecutiveDays Int
+  requiresApproval Boolean
+  approvalLevels   String   // JSON string array
+}
+
+model PolicyChange {
+  id      String   @id @default(cuid())
+  policyId String
+  type    String
+  field   String
+  from    String
+  to      String
+  actor   String
+  date    DateTime @default(now())
+}
+
+// Attendance model removed (reverted)

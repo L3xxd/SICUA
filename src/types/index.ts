@@ -11,6 +11,17 @@ export interface User {
   avatar?: string;
   vacationDays: number;
   usedVacationDays: number;
+  // Campos adicionales de perfil
+  // telefono
+  phone?: string;
+  // fecha de ingreso (ISO yyyy-mm-dd)
+  hireDate?: string;
+  // antigüedad en años (se recomienda calcularla a partir de hireDate)
+  seniorityYears?: number;
+  // tipo de contrato (solo 'fijo' o 'temporal')
+  contractType?: 'fijo' | 'temporal';
+  // código de barras único
+  barcode?: string;
 }
 
 export interface Request {

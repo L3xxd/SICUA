@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { mockUsers } from '../data/mockData';
+import { api } from '../services/api';
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -26,17 +27,28 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const login = (email: string, password: string): boolean => {
-    // Simulación de autenticación con soporte de contraseña almacenada
-    const user = mockUsers.find(u => u.email === email);
-    if (!user) return false;
-    const pass = (user as any).password;
-    const ok = pass ? password === pass : password === 'password';
-    if (ok) {
-      setCurrentUser(user);
-      return true;
+  const login = async (email: string, password: string): Promise<boolean> => {
+    if (api.isEnabled) {
+      try {
+        const { token, user } = await api.login(email, password);
+        try { localStorage.setItem('auth_token', token); } catch {}
+        setCurrentUser(user as User);
+        return true;
+      } catch (e) {
+        setCurrentUser(null);
+        return false;
+      }
+    } else {
+      const user = mockUsers.find(u => u.email === email);
+      if (!user) return false;
+      const pass = (user as any).password;
+      const ok = pass ? password === pass : password === 'password';
+      if (ok) {
+        setCurrentUser(user);
+        return true;
+      }
+      return false;
     }
-    return false;
   };
 
   const logout = () => {

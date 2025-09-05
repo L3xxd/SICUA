@@ -14,6 +14,7 @@ import PoliciesView from './components/PoliciesView';
 import ReportsView from './components/ReportsView';
 import ExecutiveReports from './components/director/ExecutiveReports';
 import AnalyticsView from './components/director/AnalyticsView';
+import ProfileView from './components/ProfileView';
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const App: React.FC = () => {
           <Route index element={<Navigate to="/dashboard" replace />} />
           {/* Rutas principales */}
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="profile" element={<ProfileView />} />
 
           {/* Solicitudes */}
           <Route path="requests" element={<RequestsList />} />
