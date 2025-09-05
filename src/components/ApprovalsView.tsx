@@ -6,7 +6,7 @@ import { Request } from '../types';
 
 const ApprovalsView: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests, users, updateRequestStatus, addNotification } = useApp();
+  const { requests, users, updateRequestStatus, updateRequestStage, addNotification } = useApp();
 
   // UI state for modals
   const [detailReq, setDetailReq] = useState<Request | null>(null);
@@ -19,12 +19,12 @@ const ApprovalsView: React.FC = () => {
       const teamMembers = users.filter(user => user.supervisorId === currentUser?.id);
       return requests.filter(request =>
         teamMembers.some(member => member.id === request.employeeId) &&
-        (request.stage ?? 'supervisor') === 'supervisor' && request.status !== 'rejected'
+        (request.stage ?? 'supervisor') === 'supervisor' && (request.status === 'pending' || request.status === 'in_review')
       );
     } else if (currentUser?.role === 'hr') {
-      return requests.filter(r => (r.stage ?? 'supervisor') === 'hr' && r.status !== 'rejected');
+      return requests.filter(r => (r.stage ?? 'supervisor') === 'hr' && (r.status === 'pending' || r.status === 'in_review'));
     } else if (currentUser?.role === 'director') {
-      return requests.filter(r => (r.stage ?? 'supervisor') === 'director' && r.status !== 'rejected');
+      return requests.filter(r => (r.stage ?? 'supervisor') === 'director' && (r.status === 'pending' || r.status === 'in_review'));
     }
     return [];
   };
@@ -32,18 +32,17 @@ const ApprovalsView: React.FC = () => {
   const pendingRequests = useMemo(() => getRequestsToApprove(), [requests, users, currentUser]);
 
   const handleApprove = (requestId: string, employeeId: string, employeeName: string) => {
-    updateRequestStatus(requestId, 'approved', currentUser?.name);
-    
-    // Notificar al empleado
-    addNotification({
-      userId: employeeId,
-      title: 'Solicitud Aprobada',
-      message: `Tu solicitud ha sido aprobada por ${currentUser?.name}`,
-      type: 'approval',
-      read: false,
-      relatedRequestId: requestId,
-    });
-
+    // Flujo por etapas: supervisor -> hr -> director -> completed
+    if (currentUser?.role === 'supervisor') {
+      updateRequestStage(requestId, 'hr');
+      // Opcional: notificar al empleado que avanzó de etapa
+      addNotification({ userId: employeeId, title: 'Tu solicitud avanzó', message: 'Tu solicitud pasó a Recursos Humanos.', type: 'request', read: false, relatedRequestId: requestId });
+    } else if (currentUser?.role === 'hr') {
+      updateRequestStage(requestId, 'director');
+      addNotification({ userId: employeeId, title: 'Tu solicitud avanzó', message: 'Tu solicitud pasó a Dirección.', type: 'request', read: false, relatedRequestId: requestId });
+    } else if (currentUser?.role === 'director') {
+      updateRequestStatus(requestId, 'approved', currentUser?.name);
+    }
     // Cerrar modales si estuvieran abiertos
     setDetailReq((prev) => (prev && prev.id === requestId ? null : prev));
     setRejectReq((prev) => (prev && prev.id === requestId ? null : prev));

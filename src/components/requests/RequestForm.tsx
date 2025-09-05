@@ -29,6 +29,19 @@ const RequestForm: React.FC = () => {
   const [startDate, setStartDate] = useState<string>(todayISO);
   const [endDate, setEndDate] = useState<string>(todayISO);
   const [reason, setReason] = useState<string>('');
+  const [permissionDetails, setPermissionDetails] = useState<string>('');
+  const [leaveDetails, setLeaveDetails] = useState<string>('');
+  const [permissionFile, setPermissionFile] = useState<File | null>(null);
+  const [permissionFileError, setPermissionFileError] = useState<string>('');
+  const permissionReasons = ['Salud', 'Fallecimiento de Familiar', 'Motivos Personales'];
+  const leaveReasons = [
+    'Licencia de maternidad',
+    'Licencia por paternidad',
+    'Por adopción',
+    'Licencia por matrimonio',
+    'Licencia por luto',
+    'Licencia por examen médico',
+  ];
   const [urgent, setUrgent] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -77,10 +90,16 @@ const RequestForm: React.FC = () => {
     }
   }, [startDate, endDate]);
 
-  // Auto-rellenar motivo para vacaciones y bloquear edición
+  // Auto-rellenar motivo para vacaciones y manejo inicial para permisos
   useEffect(() => {
     if (type === 'vacation') {
       setReason('vacaiones'); // según solicitud del cliente (sin tilde ni n)
+    } else if (type === 'permission') {
+      setReason(''); // forzar selección explícita
+      setPermissionDetails('');
+    } else if (type === 'leave') {
+      setReason('');
+      setLeaveDetails('');
     }
   }, [type]);
 
@@ -92,8 +111,18 @@ const RequestForm: React.FC = () => {
     if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
       errs.push('La fecha de fin no puede ser anterior a la fecha de inicio.');
     }
-    if ((reason ?? '').trim().length < 5) {
-      errs.push('El motivo debe tener al menos 5 caracteres.');
+    if (type === 'permission') {
+      if (!(reason ?? '').trim()) errs.push('Selecciona un motivo.');
+      if (reason === 'Salud') {
+        // Requerir adjunto cuando el motivo es Salud
+        if (!permissionFile) errs.push('Debes adjuntar un comprobante médico.');
+      }
+    } else if (type === 'leave') {
+      if (!(reason ?? '').trim()) errs.push('Selecciona un motivo de licencia.');
+    } else {
+      if ((reason ?? '').trim().length < 5) {
+        errs.push('El motivo debe tener al menos 5 caracteres.');
+      }
     }
     // Validaciones de políticas para vacaciones
     if (type === 'vacation') {
@@ -125,6 +154,11 @@ const RequestForm: React.FC = () => {
     setSubmitting(true);
     try {
       const safeType = type as RequestType;
+      const effectiveReason = safeType === 'permission'
+        ? [reason.trim(), permissionDetails.trim(), (reason === 'Salud' && permissionFile) ? `(Adjunto: ${permissionFile.name})` : ''].filter(Boolean).join(' — ')
+        : safeType === 'leave'
+        ? [reason.trim(), leaveDetails.trim()].filter(Boolean).join(' — ')
+        : (reason.trim());
 
       const reqPayload = {
         employeeId: currentUser.id,
@@ -132,7 +166,7 @@ const RequestForm: React.FC = () => {
         type: safeType,
         startDate,
         endDate,
-        reason: reason.trim(),
+        reason: effectiveReason,
         status: 'pending' as const,
         approvedBy: undefined,
         approvedDate: undefined,
@@ -332,25 +366,117 @@ const RequestForm: React.FC = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Motivo <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              readOnly={type === 'vacation'}
-              rows={3}
-              placeholder={type === 'vacation' ? 'vacaiones' : 'Describe brevemente el motivo de tu solicitud'}
-              className={`block w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                type === 'vacation'
-                  ? 'border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed'
-                  : 'border-gray-300'
-              }`}
-            />
-            <Clock className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-300" />
-          </div>
+          {type === 'permission' ? (
+            <div className="relative">
+              <select
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecciona un motivo</option>
+                {permissionReasons.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+          ) : type === 'leave' ? (
+            <div className="relative">
+              <select
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecciona un motivo</option>
+                {leaveReasons.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <Clock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+          ) : (
+            <div className="relative">
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                readOnly={type === 'vacation'}
+                rows={3}
+                placeholder={type === 'vacation' ? 'vacaiones' : 'Describe brevemente el motivo de tu solicitud'}
+                className={`block w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  type === 'vacation'
+                    ? 'border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed'
+                    : 'border-gray-300'
+                }`}
+              />
+              <Clock className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-300" />
+            </div>
+          )}
           {type === 'vacation' && (
             <p className="mt-1 text-xs text-gray-500">Para solicitudes de vacaciones, el motivo se establece automáticamente como "vacaiones".</p>
           )}
         </div>
+
+        {type === 'permission' && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción adicional (opcional)
+            </label>
+            <textarea
+              value={permissionDetails}
+              onChange={(e) => setPermissionDetails(e.target.value)}
+              rows={3}
+              placeholder="Añade contexto: médico, familiar, etc. (opcional)"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">Se adjuntará junto al motivo seleccionado.</p>
+          </div>
+        )}
+
+        {type === 'leave' && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción adicional (opcional)
+            </label>
+            <textarea
+              value={leaveDetails}
+              onChange={(e) => setLeaveDetails(e.target.value)}
+              rows={3}
+              placeholder="Añade contexto de la licencia (opcional)"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">Se adjuntará junto al motivo seleccionado.</p>
+          </div>
+        )}
+
+        {type === 'permission' && reason === 'Salud' && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Comprobante médico (PDF o imagen) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(e) => {
+                const f = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                setPermissionFileError('');
+                if (f && f.size > 5 * 1024 * 1024) {
+                  setPermissionFile(null);
+                  setPermissionFileError('El archivo supera 5MB.');
+                  return;
+                }
+                setPermissionFile(f);
+              }}
+              className="block w-full text-sm"
+            />
+            {permissionFile && (
+              <p className="mt-1 text-xs text-gray-600">Adjunto: {permissionFile.name} ({Math.round((permissionFile.size/1024/1024)*10)/10} MB)</p>
+            )}
+            {permissionFileError && (
+              <p className="mt-1 text-xs text-red-600">{permissionFileError}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">Este adjunto se referencia en la solicitud. (Persistencia de archivo no habilitada)</p>
+          </div>
+        )}
 
         {/* Urgente */}
         <div className="flex items-center">

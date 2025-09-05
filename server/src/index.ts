@@ -135,6 +135,19 @@ app.put('/requests/:id/status', async (req, res) => {
   }
 });
 
+// Update request stage (supervisor -> hr -> director -> completed)
+app.put('/requests/:id/stage', async (req, res) => {
+  const { id } = req.params;
+  const { stage } = req.body ?? {} as { stage: string };
+  if (!stage) return res.status(400).json({ error: 'stage requerido' });
+  try {
+    const updated = await prisma.request.update({ where: { id }, data: { stage } });
+    res.json(updated);
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
 app.delete('/requests/:id', async (req, res) => {
   const { id } = req.params;
   try {

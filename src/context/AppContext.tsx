@@ -11,6 +11,7 @@ interface AppContextType {
   policyHistory: PolicyChange[];
   addRequest: (request: Omit<Request, 'id' | 'requestDate'>) => Promise<Request>;
   updateRequestStatus: (id: string, status: Request['status'], approvedBy?: string, rejectionReason?: string) => void;
+  updateRequestStage: (id: string, stage: NonNullable<Request['stage']>) => void;
   markNotificationAsRead: (id: string) => void;
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
   deleteRequest: (id: string) => Promise<void>;
@@ -130,7 +131,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           endDate: endISO,
           reason: requestData.reason,
           status: requestData.status || 'pending',
-          stage: requestData.stage || null,
+          stage: requestData.stage || 'supervisor',
           supervisorName: requestData.supervisorName || (employee?.supervisorId ? users.find(u => u.id === employee?.supervisorId)?.name : null),
           department: requestData.department || employee?.department || null,
           requestDate: new Date().toISOString(),
@@ -162,6 +163,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         ...requestData,
         id: (requests.length + 1).toString(),
         requestDate: new Date().toISOString().split('T')[0],
+        stage: 'supervisor',
       };
       setRequests(prev => [...prev, newRequest]);
       return newRequest;
@@ -173,11 +175,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       (async () => {
         try {
           const updated = await api.updateRequestStatus(id, { status, approvedBy, rejectionReason });
-          setRequests(prev => prev.map(r => r.id === id ? {
-            ...(updated as any),
-            requestDate: (updated as any).requestDate?.split ? (updated as any).requestDate.split('T')[0] : (updated as any).requestDate,
-            approvedDate: (updated as any).approvedDate?.split ? (updated as any).approvedDate.split('T')[0] : (updated as any).approvedDate,
-          } : r));
+          setRequests(prev => prev.map(r => {
+            if (r.id !== id) return r;
+            const u: any = updated || {};
+            return {
+              ...r, // preservar campos no retornados por el backend (employeeName, department, etc.)
+              ...u,
+              requestDate: u.requestDate?.split ? u.requestDate.split('T')[0] : (u.requestDate || r.requestDate),
+              approvedDate: u.approvedDate?.split ? u.approvedDate.split('T')[0] : (u.approvedDate || r.approvedDate),
+              employeeName: u.employeeName || r.employeeName || u.employee?.name || '',
+              department: u.department || r.department || u.employee?.department,
+            } as Request;
+          }));
           // Notificar al empleado
           const reqAfter = (updated as any);
           const notif = status === 'approved'
@@ -249,6 +258,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       try { await api.deleteRequest(id); } catch (e) { console.error('Error eliminando solicitud', e); }
     }
     setRequests(prev => prev.filter(r => r.id !== id));
+  };
+
+  const updateRequestStage = (id: string, stage: NonNullable<Request['stage']>) => {
+    if (api.isEnabled) {
+      (async () => {
+        try {
+          const updated = await api.updateRequestStage(id, { stage });
+          setRequests(prev => prev.map(r => r.id === id ? { ...r, stage: (updated as any).stage } : r));
+        } catch (e) { console.error('Error actualizando etapa', e); }
+      })();
+    } else {
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, stage } : r));
+    }
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -378,6 +400,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       policyHistory,
       addRequest,
       updateRequestStatus,
+      updateRequestStage,
       markNotificationAsRead,
       addNotification,
       deleteRequest,

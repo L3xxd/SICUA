@@ -10,7 +10,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:seed": "tsx prisma/seed.ts",
-    "backfill:barcodes": "tsx scripts/backfillBarcodes.ts"
+    "backfill:barcodes": "tsx scripts/backfillBarcodes.ts",
+    "sim:update-ana": "tsx scripts/updateAna.ts",
+    "sim:reset": "tsx scripts/resetSimulation.ts",
+    "sim:reset-global": "tsx scripts/resetGlobal.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
