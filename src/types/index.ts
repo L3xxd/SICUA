@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  password?: string;
   role: 'employee' | 'supervisor' | 'hr' | 'director';
   department: string;
   position: string;
@@ -21,6 +22,9 @@ export interface Request {
   endDate: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected' | 'in_review';
+  stage?: 'supervisor' | 'hr' | 'director' | 'completed';
+  supervisorName?: string;
+  department?: string;
   requestDate: string;
   approvedBy?: string;
   approvedDate?: string;

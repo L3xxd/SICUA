@@ -862,72 +862,11 @@ export const mockUsers: User[] = [
 ];
 
 export const mockRequests: Request[] = [
-  {
-    id: '1',
-    employeeId: '3',
-    employeeName: 'Ana López',
-    type: 'vacation',
-    startDate: '2025-02-15',
-    endDate: '2025-02-19',
-    reason: 'Vacaciones familiares',
-    status: 'pending',
-    requestDate: '2025-01-15',
-    days: 5,
-    urgent: false,
-  },
-  {
-    id: '3',
-    employeeId: '3',
-    employeeName: 'Ana López',
-    type: 'vacation',
-    startDate: '2025-02-15',
-    endDate: '2025-02-19',
-    reason: 'Vacaciones familiares',
-    status: 'pending',
-    requestDate: '2025-01-15',
-    days: 15,
-    urgent: false,
-  },
-  {
-    id: '2',
-    employeeId: '3',
-    employeeName: 'Ana López',
-    type: 'permission',
-    startDate: '2025-01-22',
-    endDate: '2025-01-22',
-    reason: 'Cita médica',
-    status: 'approved',
-    requestDate: '2025-01-20',
-    approvedBy: 'Carlos Mendez',
-    approvedDate: '2025-01-21',
-    days: 1,
-    urgent: true,
-  },
 
-  
 ];
 
 export const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    userId: '2',
-    title: 'Nueva solicitud de vacaciones',
-    message: 'Ana López ha solicitado 5 días de vacaciones',
-    type: 'request',
-    read: false,
-    createdAt: '2025-01-15T10:30:00',
-    relatedRequestId: '1',
-  },
-  {
-    id: '2',
-    userId: '3',
-    title: 'Permiso aprobado',
-    message: 'Tu solicitud de permiso médico ha sido aprobada',
-    type: 'approval',
-    read: false,
-    createdAt: '2025-01-21T14:15:00',
-    relatedRequestId: '2',
-  },
+
 ];
 
 export const mockDepartments: Department[] = [

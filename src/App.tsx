@@ -12,6 +12,8 @@ import TeamView from './components/TeamView';
 import EmployeesManagement from './components/EmployeesManagement';
 import PoliciesView from './components/PoliciesView';
 import ReportsView from './components/ReportsView';
+import ExecutiveReports from './components/director/ExecutiveReports';
+import AnalyticsView from './components/director/AnalyticsView';
 
 const App: React.FC = () => {
   return (
@@ -39,6 +41,8 @@ const App: React.FC = () => {
           <Route path="reports" element={<ReportsView />} />
           <Route path="employees" element={<EmployeesManagement />} />
           <Route path="policies" element={<PoliciesView />} />
+          <Route path="executive-reports" element={<ExecutiveReports />} />
+          <Route path="analytics" element={<AnalyticsView />} />
         </Route>
       </Route>
 

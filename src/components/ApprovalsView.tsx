@@ -18,12 +18,14 @@ const ApprovalsView: React.FC = () => {
   const getRequestsToApprove = () => {
     if (currentUser?.role === 'supervisor') {
       const teamMembers = mockUsers.filter(user => user.supervisorId === currentUser?.id);
-      return requests.filter(request => 
-        teamMembers.some(member => member.id === request.employeeId) && 
-        request.status === 'pending'
+      return requests.filter(request =>
+        teamMembers.some(member => member.id === request.employeeId) &&
+        (request.stage ?? 'supervisor') === 'supervisor' && request.status !== 'rejected'
       );
-    } else if (currentUser?.role === 'hr' || currentUser?.role === 'director') {
-      return requests.filter(r => r.status === 'pending');
+    } else if (currentUser?.role === 'hr') {
+      return requests.filter(r => (r.stage ?? 'supervisor') === 'hr' && r.status !== 'rejected');
+    } else if (currentUser?.role === 'director') {
+      return requests.filter(r => (r.stage ?? 'supervisor') === 'director' && r.status !== 'rejected');
     }
     return [];
   };
@@ -251,6 +253,18 @@ const ApprovalsView: React.FC = () => {
                 <span className="text-gray-500">Días</span>
                 <p className="font-medium text-gray-900">{detailReq.days}</p>
               </div>
+              {detailReq.supervisorName && (
+                <div>
+                  <span className="text-gray-500">Supervisor</span>
+                  <p className="font-medium text-gray-900">{detailReq.supervisorName}</p>
+                </div>
+              )}
+              {detailReq.department && (
+                <div>
+                  <span className="text-gray-500">Departamento</span>
+                  <p className="font-medium text-gray-900">{detailReq.department}</p>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <span className="text-gray-500">Motivo</span>
                 <p className="font-medium text-gray-900">{detailReq.reason}</p>

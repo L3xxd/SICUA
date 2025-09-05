@@ -15,6 +15,7 @@ interface AppContextType {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   updateUser: (id: string, patch: Partial<User>) => void;
+  addUser: (user: Omit<User, 'id'>) => void;
   updatePolicy: (id: string, patch: Partial<PolicyRule>) => void;
   addPolicyHistory: (entries: PolicyChange[]) => void;
   theme: 'light' | 'dark';
@@ -99,6 +100,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...patch } : u)));
   };
 
+  const addUser = (payload: Omit<User, 'id'>) => {
+    const nextId = (users.length + 1).toString();
+    const user: User = { id: nextId, ...payload } as User;
+    setUsers(prev => [...prev, user]);
+  };
+
   const updatePolicy = (id: string, patch: Partial<PolicyRule>) => {
     setPolicies(prev => prev.map(p => (p.id === id ? { ...p, ...patch } : p)));
   };
@@ -124,6 +131,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       searchQuery,
       setSearchQuery,
       updateUser,
+      addUser,
       updatePolicy,
       addPolicyHistory,
       theme,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, FileText, Clock, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -40,6 +40,13 @@ const RequestForm: React.FC = () => {
       return 0;
     }
   }, [startDate, endDate]);
+
+  // Auto-rellenar motivo para vacaciones y bloquear edición
+  useEffect(() => {
+    if (type === 'vacation') {
+      setReason('vacaiones'); // según solicitud del cliente (sin tilde ni n)
+    }
+  }, [type]);
 
   const validate = () => {
     const errs: string[] = [];
@@ -198,12 +205,20 @@ const RequestForm: React.FC = () => {
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
+              readOnly={type === 'vacation'}
               rows={3}
-              placeholder="Describe brevemente el motivo de tu solicitud"
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={type === 'vacation' ? 'vacaiones' : 'Describe brevemente el motivo de tu solicitud'}
+              className={`block w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                type === 'vacation'
+                  ? 'border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed'
+                  : 'border-gray-300'
+              }`}
             />
             <Clock className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-300" />
           </div>
+          {type === 'vacation' && (
+            <p className="mt-1 text-xs text-gray-500">Para solicitudes de vacaciones, el motivo se establece automáticamente como "vacaiones".</p>
+          )}
         </div>
 
         {/* Urgente */}

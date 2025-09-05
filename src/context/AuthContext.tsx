@@ -27,9 +27,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const login = (email: string, password: string): boolean => {
-    // Simulación de autenticación
+    // Simulación de autenticación con soporte de contraseña almacenada
     const user = mockUsers.find(u => u.email === email);
-    if (user && password === 'password') {
+    if (!user) return false;
+    const pass = (user as any).password;
+    const ok = pass ? password === pass : password === 'password';
+    if (ok) {
       setCurrentUser(user);
       return true;
     }

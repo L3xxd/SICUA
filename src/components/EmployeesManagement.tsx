@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { roleLabel } from '../utils/labels';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Users, Filter, Edit3, RefreshCw } from 'lucide-react';
+import { Users, Filter, Edit3, RefreshCw, Plus } from 'lucide-react';
 
 const EmployeesManagement: React.FC = () => {
-  const { users, updateUser, searchQuery } = useApp();
+  const { users, updateUser, addUser, searchQuery } = useApp();
   const { currentUser } = useAuth();
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [deptFilter, setDeptFilter] = useState<string>('');
@@ -16,6 +17,28 @@ const EmployeesManagement: React.FC = () => {
   const [vacTotal, setVacTotal] = useState<number>(0);
   const [vacUsed, setVacUsed] = useState<number>(0);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+  const [createOpen, setCreateOpen] = useState<boolean>(false);
+
+  // Create modal fields
+  const [cName, setCName] = useState('');
+  const [cEmail, setCEmail] = useState('');
+  const [cRole, setCRole] = useState<'employee'|'supervisor'|'hr'|'director'>('employee');
+  const [cDept, setCDept] = useState('');
+  const [cPosition, setCPosition] = useState('');
+  const [cSupervisorId, setCSupervisorId] = useState('');
+  const [cVacTotal, setCVacTotal] = useState(10);
+  const [cVacUsed, setCVacUsed] = useState(0);
+  const [cPass, setCPass] = useState('');
+  const [cPass2, setCPass2] = useState('');
+  const emailValid = useMemo(() => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(cEmail.trim()), [cEmail]);
+  const emailExists = useMemo(() => users.some(u => u.email.toLowerCase() === cEmail.trim().toLowerCase()), [users, cEmail]);
+  const supervisorsByDeptCreate = useMemo(() => users.filter(u => u.role === 'supervisor' && u.department === cDept), [users, cDept]);
+
+  React.useEffect(() => {
+    if (cSupervisorId && !supervisorsByDeptCreate.some(s => s.id === cSupervisorId)) {
+      setCSupervisorId('');
+    }
+  }, [cDept]);
 
   const departments = useMemo(() => Array.from(new Set(users.map(u => u.department))).sort(), [users]);
   const supervisors = useMemo(() => users.filter(u => u.role === 'supervisor'), [users]);
@@ -55,6 +78,7 @@ const EmployeesManagement: React.FC = () => {
       .filter(u => !q || `${u.name} ${u.department} ${u.position}`.toLowerCase().includes(q));
   }, [users, roleFilter, deptFilter, searchQuery]);
 
+
   const openEdit = (id: string) => {
     const u = users.find(x => x.id === id);
     if (!u) return;
@@ -90,8 +114,8 @@ const EmployeesManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-wrap items-end gap-4">
+      <div className="bg-white dark:bg-[var(--bg-panel)] rounded-lg border border-gray-200 dark:border-[var(--border)] p-4">
+        <div className="flex flex-wrap items-end gap-4 justify-between">
           <div className="flex items-center text-sm text-gray-600">
             <Filter className="h-4 w-4 mr-2" /> Filtros
           </div>
@@ -115,6 +139,18 @@ const EmployeesManagement: React.FC = () => {
           {(roleFilter || deptFilter) && (
             <button className="text-sm underline text-gray-600" onClick={() => { setRoleFilter(''); setDeptFilter(''); }}>Limpiar</button>
           )}
+
+          {(currentUser?.role === 'hr' || currentUser?.role === 'director') && (
+            <div className="ml-auto">
+              <button
+                type="button"
+                onClick={() => { setCreateOpen(true); setCDept(departments[0] || ''); setCSupervisorId(''); }}
+                className="inline-flex items-center px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" /> Agregar empleado
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -133,7 +169,7 @@ const EmployeesManagement: React.FC = () => {
               <p className="text-xs text-gray-500">{u.position}</p>
             </div>
             <div className="col-span-3">{u.department}</div>
-            <div className="col-span-2 capitalize">{u.role}</div>
+            <div className="col-span-2">{roleLabel(u.role)}</div>
             <div className="col-span-2 text-right">{u.usedVacationDays}/{u.vacationDays}</div>
             <div className="col-span-1 text-right">
               <button onClick={() => openEdit(u.id)} className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-50"><Edit3 className="h-3 w-3 mr-1"/>Editar</button>
@@ -209,6 +245,93 @@ const EmployeesManagement: React.FC = () => {
                   );
                 })()}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create employee modal */}
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
+          <div className="relative bg-white dark:bg-[var(--bg-panel)] rounded-lg border border-gray-200 dark:border-[var(--border)] shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-[var(--text-primary)]">Agregar empleado</h3>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <label className="block">Nombre
+                <input className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cName} onChange={e=>setCName(e.target.value)} />
+              </label>
+              <label className="block">Email
+                <input type="email" className={`mt-1 w-full border rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] ${((!emailValid && cEmail) || emailExists) ? 'border-red-500' : 'border-gray-300 dark:border-[var(--border)]'}`} value={cEmail} onChange={e=>setCEmail(e.target.value)} />
+                {!emailValid && cEmail && (
+                  <p className="mt-1 text-xs text-red-500">Formato de correo inválido.</p>
+                )}
+                {emailExists && (
+                  <p className="mt-1 text-xs text-red-500">Este correo ya está registrado.</p>
+                )}
+              </label>
+              <label className="block">Rol
+                <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cRole} onChange={e=>setCRole(e.target.value as any)}>
+                  <option value="employee">Empleado</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="hr">RRHH</option>
+                  <option value="director">Director</option>
+                </select>
+              </label>
+              <label className="block">Departamento
+                <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cDept} onChange={e=>setCDept(e.target.value)}>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </label>
+              <label className="block sm:col-span-2">Puesto
+                <input className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cPosition} onChange={e=>setCPosition(e.target.value)} />
+              </label>
+              <label className="block">Supervisor
+                <select className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cSupervisorId} onChange={e=>setCSupervisorId(e.target.value)}>
+                  <option value="">Sin supervisor</option>
+                  {users.filter(u => u.role === 'supervisor' && u.department === cDept).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+              <label className="block">Contraseña (mín. 6)
+                <input type="password" className={`mt-1 w-full border rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] ${(cPass && cPass.length < 6) ? 'border-red-500' : 'border-gray-300 dark:border-[var(--border)]'}`} value={cPass} onChange={e=>setCPass(e.target.value)} />
+                {cPass && cPass.length < 6 && (
+                  <p className="mt-1 text-xs text-red-500">La contraseña debe tener al menos 6 caracteres.</p>
+                )}
+              </label>
+              <label className="block">Confirmar contraseña
+                <input type="password" className={`mt-1 w-full border rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)] ${(cPass2 && cPass != cPass2) ? 'border-red-500' : 'border-gray-300 dark:border-[var(--border)]'}`} value={cPass2} onChange={e=>setCPass2(e.target.value)} />
+                {cPass2 && cPass != cPass2 && (
+                  <p className="mt-1 text-xs text-red-500">Las contraseñas no coinciden.</p>
+                )}
+              </label>
+              <label className="block">Vacaciones totales
+                <input type="number" min={0} className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cVacTotal} onChange={e=>setCVacTotal(parseInt(e.target.value||'0',10))} />
+              </label>
+              <label className="block">Vacaciones usadas
+                <input type="number" min={0} className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cVacUsed} onChange={e=>setCVacUsed(parseInt(e.target.value||'0',10))} />
+              </label>
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button onClick={()=>setCreateOpen(false)} className="px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-[var(--border)]">Cancelar</button>
+              <button
+                onClick={()=>{
+                  addUser({
+                    name:cName.trim(), email:cEmail.trim(), password: cPass.trim(), role:cRole, department:cDept, position:cPosition.trim(), supervisorId: cSupervisorId||undefined, vacationDays:cVacTotal, usedVacationDays: Math.min(cVacTotal,cVacUsed)
+                  } as any);
+                  setCreateOpen(false);
+                  setCName(''); setCEmail(''); setCRole('employee'); setCDept(''); setCPosition(''); setCSupervisorId(''); setCVacTotal(10); setCVacUsed(0); setCPass(''); setCPass2('');
+                }}
+                disabled={
+                  !cName.trim() ||
+                  !/[^\s@]+@[^\s@]+\.[^\s@]+/.test(cEmail.trim()) ||
+                  users.some(u => u.email.toLowerCase() === cEmail.trim().toLowerCase()) ||
+                  !cDept ||
+                  cPass.length < 6 ||
+                  cPass !== cPass2
+                }
+                className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                Guardar
+              </button>
             </div>
           </div>
         </div>
