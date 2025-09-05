@@ -862,7 +862,58 @@ export const mockUsers: User[] = [
 ];
 
 export const mockRequests: Request[] = [
+  {
+    id: '1',
+    employeeId: '3',
+    employeeName: 'Ana López',
+    type: 'vacation',
+    startDate: '2025-02-15',
+    endDate: '2025-02-19',
+    reason: 'Vacaciones familiares',
+    status: 'pending',
+    stage: 'supervisor',
+    supervisorName: 'Carlos Mendez',
+    department: 'Mantenimiento',
+    requestDate: '2025-01-15',
+    days: 5,
+    urgent: false,
+  },
+  {
+    id: '3',
+    employeeId: '3',
+    employeeName: 'Ana López',
+    type: 'vacation',
+    startDate: '2025-02-15',
+    endDate: '2025-02-19',
+    reason: 'Vacaciones familiares',
+    status: 'pending',
+    stage: 'supervisor',
+    supervisorName: 'Carlos Mendez',
+    department: 'Mantenimiento',
+    requestDate: '2025-01-15',
+    days: 15,
+    urgent: false,
+  },
+  {
+    id: '2',
+    employeeId: '3',
+    employeeName: 'Ana López',
+    type: 'permission',
+    startDate: '2025-01-22',
+    endDate: '2025-01-22',
+    reason: 'Cita médica',
+    status: 'approved',
+    stage: 'completed',
+    supervisorName: 'Carlos Mendez',
+    department: 'Mantenimiento',
+    requestDate: '2025-01-20',
+    approvedBy: 'Carlos Mendez',
+    approvedDate: '2025-01-21',
+    days: 1,
+    urgent: true,
+  },
 
+  
 ];
 
 export const mockNotifications: Notification[] = [

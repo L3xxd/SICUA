@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { Calendar, Clock, FileText, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, FileText, XCircle ,CheckCircle, Eye} from 'lucide-react';
 
 const RequestsList: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { requests } = useApp();
+  const { requests, updateRequestStatus } = useApp();
+  const [cancelId, setCancelId] = useState<string | null>(null);
 
   const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
 
@@ -242,6 +243,8 @@ const RequestsList: React.FC = () => {
         )}
       </div>
     </div>
+
+
   );
 };
 
