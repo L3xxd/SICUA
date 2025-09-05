@@ -2,11 +2,10 @@ import React, { useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Users, BarChart3, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
-import { mockUsers } from '../../data/mockData';
 
 const ExecutiveReports: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests } = useApp();
+  const { requests, users } = useApp();
 
   if (currentUser?.role !== 'director') {
     return (
@@ -26,7 +25,7 @@ const ExecutiveReports: React.FC = () => {
   const byDept = useMemo(() => {
     const m = new Map<string, { requests: number; approved: number; pending: number }>();
     requests.forEach(r => {
-      const dept = r.department || mockUsers.find(u => u.id === r.employeeId)?.department || 'Sin depto';
+      const dept = r.department || users.find(u => u.id === r.employeeId)?.department || 'Sin depto';
       const row = m.get(dept) || { requests: 0, approved: 0, pending: 0 };
       row.requests += 1;
       if (r.status === 'approved') row.approved += 1;
@@ -34,7 +33,7 @@ const ExecutiveReports: React.FC = () => {
       m.set(dept, row);
     });
     return Array.from(m, ([name, stats]) => ({ name, ...stats })).sort((a,b)=>b.requests-a.requests);
-  }, [requests]);
+  }, [requests, users]);
 
   return (
     <div className="space-y-6">
@@ -94,4 +93,3 @@ const Kpi: React.FC<{ icon: any; color: string; title: string; value: React.Reac
 );
 
 export default ExecutiveReports;
-

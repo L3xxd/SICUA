@@ -79,6 +79,15 @@ async function main() {
   // Asegurar la relación supervisor -> empleado
   await prisma.user.update({ where: { id: employee.id }, data: { supervisorId: supervisor.id } });
 
+  // Backfill assignments a partir de department/position
+  const users = await prisma.user.findMany();
+  for (const u of users) {
+    const exists = await prisma.departmentAssignment.findFirst({ where: { userId: u.id, department: u.department } });
+    if (!exists) {
+      await prisma.departmentAssignment.create({ data: { userId: u.id, department: u.department, position: u.position } });
+    }
+  }
+
   const pcount = await prisma.policyRule.count();
   if (pcount === 0) {
     await prisma.policyRule.createMany({ data: [

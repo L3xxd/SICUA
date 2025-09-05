@@ -1,18 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart3, Download, Filter, TrendingUp, Users, Calendar, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { mockUsers } from '../data/mockData';
 
 const ReportsView: React.FC = () => {
-  const { requests } = useApp();
+  const { requests, users } = useApp();
   const [selectedPeriod, setSelectedPeriod] = useState<'monthly'|'quarterly'|'yearly'>('monthly');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
 
   const departments = useMemo(() => {
     const set = new Set<string>(['all']);
-    mockUsers.forEach(u => set.add(u.department));
+    users.forEach(u => set.add(u.department));
     return Array.from(set);
-  }, []);
+  }, [users]);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -28,11 +27,11 @@ const ReportsView: React.FC = () => {
   }, [selectedPeriod]);
 
   const filteredRequests = useMemo(() => {
-    const deptUsers = selectedDepartment === 'all' ? mockUsers : mockUsers.filter(u => u.department === selectedDepartment);
+    const deptUsers = selectedDepartment === 'all' ? users : users.filter(u => u.department === selectedDepartment);
     const ids = new Set(deptUsers.map(u => u.id));
     const start = dateRange.start, end = dateRange.end;
     return requests.filter(r => ids.has(r.employeeId) && new Date(r.endDate) >= start && new Date(r.startDate) <= end);
-  }, [requests, selectedDepartment, dateRange]);
+  }, [requests, users, selectedDepartment, dateRange]);
   
   // Calcular estadísticas
   const totalRequests = filteredRequests.length;
@@ -78,7 +77,7 @@ const ReportsView: React.FC = () => {
   ];
 
   const departmentUsage = departments.filter(d => d !== 'all').map(dept => {
-    const deptUsers = mockUsers.filter(u => u.department === dept);
+    const deptUsers = users.filter(u => u.department === dept);
     const deptIds = new Set(deptUsers.map(u => u.id));
     const deptRequests = filteredRequests.filter(r => deptIds.has(r.employeeId));
     return {
@@ -92,7 +91,7 @@ const ReportsView: React.FC = () => {
   const exportCSV = () => {
     const header = ['Empleado','Departamento','Tipo','Inicio','Fin','Días','Estado'];
     const rows = filteredRequests.map(r => {
-      const user = mockUsers.find(u => u.id === r.employeeId);
+      const user = users.find(u => u.id === r.employeeId);
       return [r.employeeName, user?.department || '', r.type, r.startDate, r.endDate, r.days, r.status];
     });
     const csv = [header, ...rows].map(cols => cols.join(',')).join('\n');

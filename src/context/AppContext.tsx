@@ -13,6 +13,7 @@ interface AppContextType {
   updateRequestStatus: (id: string, status: Request['status'], approvedBy?: string, rejectionReason?: string) => void;
   markNotificationAsRead: (id: string) => void;
   addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
+  deleteRequest: (id: string) => Promise<void>;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   updateUser: (id: string, patch: Partial<User>) => void;
@@ -21,6 +22,7 @@ interface AppContextType {
   addPolicyHistory: (entries: PolicyChange[]) => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  refreshAll: () => Promise<void>;
 }
 
 const REQUESTS_KEY = 'sicua_requests';
@@ -59,10 +61,10 @@ function save<T>(key: string, value: T) {
 }
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
-  const [requests, setRequests] = useState<Request[]>(() => load(REQUESTS_KEY, mockRequests));
-  const [notifications, setNotifications] = useState<Notification[]>(() => load(NOTIFICATIONS_KEY, mockNotifications));
-  const [users, setUsers] = useState<User[]>(() => load(USERS_KEY, mockUsers));
-  const [policies, setPolicies] = useState<PolicyRule[]>(() => load(POLICIES_KEY, mockPolicies));
+  const [requests, setRequests] = useState<Request[]>(() => (api.isEnabled ? [] : load(REQUESTS_KEY, mockRequests)));
+  const [notifications, setNotifications] = useState<Notification[]>(() => (api.isEnabled ? [] : load(NOTIFICATIONS_KEY, mockNotifications)));
+  const [users, setUsers] = useState<User[]>(() => (api.isEnabled ? [] : load(USERS_KEY, mockUsers)));
+  const [policies, setPolicies] = useState<PolicyRule[]>(() => (api.isEnabled ? [] : load(POLICIES_KEY, mockPolicies)));
   const [policyHistory, setPolicyHistory] = useState<PolicyChange[]>(() => load(POLICY_HISTORY_KEY, []));
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => (typeof window !== 'undefined' && (localStorage.getItem('theme') as 'light'|'dark')) || 'light');
@@ -242,6 +244,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const deleteRequest = async (id: string) => {
+    if (api.isEnabled) {
+      try { await api.deleteRequest(id); } catch (e) { console.error('Error eliminando solicitud', e); }
+    }
+    setRequests(prev => prev.filter(r => r.id !== id));
+  };
+
   const markNotificationAsRead = (id: string) => {
     if (api.isEnabled) {
       (async () => {
@@ -334,6 +343,32 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
 
+  const refreshAll = async () => {
+    if (!api.isEnabled) return;
+    try {
+      const [usersRes, requestsRes, policiesRes] = await Promise.all([
+        api.getUsers(),
+        api.getRequests(),
+        api.getPolicies(),
+      ]);
+      setUsers(usersRes as User[]);
+      setRequests((requestsRes as any[]).map((r) => ({
+        ...r,
+        employeeName: r.employeeName || r.employee?.name || '',
+        department: r.department || r.employee?.department,
+        requestDate: r.requestDate?.split ? r.requestDate.split('T')[0] : r.requestDate,
+        approvedDate: r.approvedDate ? (r.approvedDate.split ? r.approvedDate.split('T')[0] : r.approvedDate) : undefined,
+      })) as Request[]);
+      setPolicies(policiesRes as PolicyRule[]);
+      try {
+        const hist = await fetch(`${import.meta.env.VITE_API_URL}/policy-history`).then(r=>r.json());
+        setPolicyHistory(hist as PolicyChange[]);
+      } catch {}
+    } catch (e) {
+      console.error('Error en refreshAll', e);
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       requests,
@@ -345,6 +380,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       updateRequestStatus,
       markNotificationAsRead,
       addNotification,
+      deleteRequest,
       searchQuery,
       setSearchQuery,
       updateUser,
@@ -353,6 +389,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       addPolicyHistory,
       theme,
       toggleTheme,
+      refreshAll,
     }}>
       {children}
     </AppContext.Provider>

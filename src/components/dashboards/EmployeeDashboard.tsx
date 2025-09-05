@@ -3,22 +3,57 @@ import { Link } from 'react-router-dom';
 import { Calendar, FileText, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import { getVacationEntitlement } from '../../utils/policies/vacations';
+import { User } from '../../types';
 
 const EmployeeDashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests } = useApp();
+  const { requests, refreshAll } = useApp();
+
+  React.useEffect(() => { refreshAll().catch(()=>{}); }, []);
 
   const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
+
+  // Calculate vacation entitlement and remaining days based on policy
+  const entitlement = React.useMemo(() => {
+    if (!currentUser) return 0;
+    return getVacationEntitlement(currentUser as User);
+  }, [currentUser]);
+
+  const remainingVacation = React.useMemo(() => {
+    if (!currentUser) return 0;
+    // Determine current service year bounds
+    const hireDate = currentUser.hireDate ? new Date(currentUser.hireDate) : null;
+    if (!hireDate) {
+      // Fallback to legacy calculation if no hireDate
+      const legacy = (currentUser.vacationDays || 0) - (currentUser.usedVacationDays || 0);
+      return Math.max(0, legacy);
+    }
+    const now = new Date();
+    const years = now.getFullYear() - hireDate.getFullYear() - (new Date(now.getFullYear(), hireDate.getMonth(), hireDate.getDate()) > now ? 1 : 0);
+    const start = new Date(hireDate);
+    start.setFullYear(hireDate.getFullYear() + Math.max(0, years));
+    const end = new Date(start);
+    end.setFullYear(start.getFullYear() + 1);
+    // Sum vacation days within this service year (approved or pending reserves)
+    const consumed = myRequests.filter(r => r.type === 'vacation' && r.status !== 'rejected')
+      .filter(r => {
+        const sd = new Date(r.startDate);
+        return sd >= start && sd < end;
+      })
+      .reduce((acc, r) => acc + (r.days || 0), 0);
+    return Math.max(0, entitlement - consumed);
+  }, [currentUser, myRequests, entitlement]);
   const pendingRequests = myRequests.filter(r => r.status === 'pending').length;
   const approvedRequests = myRequests.filter(r => r.status === 'approved').length;
 
   const stats = [
     {
       title: 'Días de vacaciones disponibles',
-      value: currentUser ? currentUser.vacationDays - currentUser.usedVacationDays : 0,
+      value: remainingVacation,
       icon: Calendar,
       color: 'bg-blue-500',
-      total: currentUser?.vacationDays,
+      total: entitlement,
     },
     {
       title: 'Solicitudes pendientes',
@@ -149,5 +184,3 @@ const EmployeeDashboard: React.FC = () => {
 };
 
 export default EmployeeDashboard;
-
-

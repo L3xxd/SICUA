@@ -2,11 +2,11 @@ import React, { useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
-import { mockUsers } from '../../data/mockData';
+import { getVacationEntitlement } from '../../utils/policies/vacations';
 
 const AnalyticsView: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests } = useApp();
+  const { requests, users } = useApp();
 
   if (currentUser?.role !== 'director') {
     return (
@@ -29,17 +29,17 @@ const AnalyticsView: React.FC = () => {
   const forecastNext = last3.length ? Math.round(last3.reduce((a,b)=>a+b,0) / last3.length) : 0;
 
   const riskDepts = useMemo(() => {
-    const m = new Map<string, { used: number; total: number }>();
-    mockUsers.forEach(u => {
-      const row = m.get(u.department) || { used: 0, total: 0 };
-      row.used += u.usedVacationDays;
-      row.total += u.vacationDays;
+    const m = new Map<string, { used: number; entitlement: number }>();
+    users.forEach(u => {
+      const row = m.get(u.department) || { used: 0, entitlement: 0 };
+      row.used += u.usedVacationDays || 0;
+      row.entitlement += getVacationEntitlement(u as any);
       m.set(u.department, row);
     });
-    return Array.from(m, ([dept, s]) => ({ dept, pct: s.total ? Math.round((s.used/s.total)*100) : 0 }))
+    return Array.from(m, ([dept, s]) => ({ dept, pct: s.entitlement ? Math.round((s.used/s.entitlement)*100) : 0 }))
       .sort((a,b)=>b.pct-a.pct)
       .slice(0,5);
-  }, []);
+  }, [users]);
 
   return (
     <div className="space-y-6">
@@ -86,4 +86,3 @@ const AnalyticsView: React.FC = () => {
 };
 
 export default AnalyticsView;
-

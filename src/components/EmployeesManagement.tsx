@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { roleLabel } from '../utils/labels';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Users, Filter, Edit3, RefreshCw, Plus } from 'lucide-react';
+import { Users, Filter, Edit3, Plus } from 'lucide-react';
+import { getVacationEntitlement } from '../utils/policies/vacations';
+import { DEPARTMENTS } from '../data/departments';
 
 const EmployeesManagement: React.FC = () => {
   const { users, updateUser, addUser, searchQuery } = useApp();
@@ -11,6 +13,7 @@ const EmployeesManagement: React.FC = () => {
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
+  const [editEmail, setEditEmail] = useState<string>('');
   const [editPosition, setEditPosition] = useState<string>('');
   const [editDept, setEditDept] = useState<string>('');
   const [editSupervisorId, setEditSupervisorId] = useState<string>('');
@@ -18,8 +21,10 @@ const EmployeesManagement: React.FC = () => {
   const [editHireDate, setEditHireDate] = useState<string>('');
   const [editContractType, setEditContractType] = useState<'fijo'|'temporal'|''>('');
   const [editBarcode, setEditBarcode] = useState<string>('');
-  const [vacTotal, setVacTotal] = useState<number>(0);
-  const [vacUsed, setVacUsed] = useState<number>(0);
+  const [editAssignments, setEditAssignments] = useState<Array<{department:string; position:string}>>([]);
+  const [editPass, setEditPass] = useState<string>('');
+  const [editPass2, setEditPass2] = useState<string>('');
+  // Eliminado manejo manual de vacaciones (se calcula por políticas)
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
 
@@ -30,14 +35,13 @@ const EmployeesManagement: React.FC = () => {
   const [cDept, setCDept] = useState('');
   const [cPosition, setCPosition] = useState('');
   const [cSupervisorId, setCSupervisorId] = useState('');
-  const [cVacTotal, setCVacTotal] = useState(10);
-  const [cVacUsed, setCVacUsed] = useState(0);
   const [cPass, setCPass] = useState('');
   const [cPass2, setCPass2] = useState('');
   const [cPhone, setCPhone] = useState('');
   const [cHireDate, setCHireDate] = useState('');
   const [cContractType, setCContractType] = useState<'fijo'|'temporal'|''>('');
   const [cBarcode, setCBarcode] = useState('');
+  const [cAssignments, setCAssignments] = useState<Array<{department:string; position:string}>>([]);
   const emailValid = useMemo(() => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(cEmail.trim()), [cEmail]);
   const emailExists = useMemo(() => users.some(u => u.email.toLowerCase() === cEmail.trim().toLowerCase()), [users, cEmail]);
   const supervisorsByDeptCreate = useMemo(() => users.filter(u => u.role === 'supervisor' && u.department === cDept), [users, cDept]);
@@ -48,7 +52,11 @@ const EmployeesManagement: React.FC = () => {
     }
   }, [cDept]);
 
-  const departments = useMemo(() => Array.from(new Set(users.map(u => u.department))).sort(), [users]);
+  const departments = useMemo(() => {
+    const set = new Set<string>(DEPARTMENTS);
+    users.forEach(u => set.add(u.department));
+    return Array.from(set).sort();
+  }, [users]);
   const supervisors = useMemo(() => users.filter(u => u.role === 'supervisor'), [users]);
   // Conjunto de subordinados (directos e indirectos) del empleado en edición
   const downlineIds = useMemo(() => {
@@ -92,6 +100,7 @@ const EmployeesManagement: React.FC = () => {
     if (!u) return;
     setEditId(id);
     setEditName(u.name);
+    setEditEmail(u.email);
     setEditPosition(u.position);
     setEditDept(u.department);
     setEditSupervisorId(u.supervisorId || '');
@@ -99,8 +108,9 @@ const EmployeesManagement: React.FC = () => {
     setEditHireDate((u as any).hireDate ? String((u as any).hireDate).slice(0,10) : '');
     setEditContractType((((u as any).contractType as any) || '') as any);
     setEditBarcode((u as any).barcode || '');
-    setVacTotal(u.vacationDays);
-    setVacUsed(u.usedVacationDays);
+    setEditAssignments(((u as any).assignments as any[] | undefined)?.map(a => ({ department: a.department, position: a.position })) || [{ department: u.department, position: u.position }]);
+    setEditPass('');
+    setEditPass2('');
   };
 
   const saveEdit = () => {
@@ -156,7 +166,7 @@ const EmployeesManagement: React.FC = () => {
             <div className="ml-auto">
               <button
                 type="button"
-                onClick={() => { setCreateOpen(true); setCDept(departments[0] || ''); setCSupervisorId(''); }}
+                onClick={() => { setCreateOpen(true); setCDept(cDept || departments[0] || ''); setCSupervisorId(''); }}
                 className="inline-flex items-center px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" /> Agregar empleado
@@ -182,7 +192,7 @@ const EmployeesManagement: React.FC = () => {
             </div>
             <div className="col-span-3">{u.department}</div>
             <div className="col-span-2">{roleLabel(u.role)}</div>
-            <div className="col-span-2 text-right">{u.usedVacationDays}/{u.vacationDays}</div>
+            <div className="col-span-2 text-right">{u.usedVacationDays}/{getVacationEntitlement(u as any)}</div>
             <div className="col-span-1 text-right">
               <button onClick={() => openEdit(u.id)} className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-50"><Edit3 className="h-3 w-3 mr-1"/>Editar</button>
             </div>
@@ -196,11 +206,20 @@ const EmployeesManagement: React.FC = () => {
       {editId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setEditId(null)} />
-          <div className="relative bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-md p-6">
+          <div className="relative bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6">
             <h3 className="text-lg font-semibold text-gray-900">Editar empleado</h3>
             <div className="mt-4 space-y-3 text-sm">
               <label className="block">Nombre
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
+              </label>
+              <label className="block">Correo electrónico
+                <input type="email" value={editEmail} onChange={(e)=>setEditEmail(e.target.value)} className={`mt-1 w-full border rounded-md px-3 py-2 ${(/[^\s@]+@[^\s@]+\.[^\s@]+/.test(editEmail) && !users.some(u => u.id !== editId && u.email.toLowerCase() === editEmail.toLowerCase())) ? 'border-gray-300' : 'border-red-500'}`} />
+                {editEmail && !/[^\s@]+@[^\s@]+\.[^\s@]+/.test(editEmail) && (
+                  <p className="text-xs text-red-600 mt-1">Formato de correo inválido.</p>
+                )}
+                {editEmail && users.some(u => u.id !== editId && u.email.toLowerCase() === editEmail.toLowerCase()) && (
+                  <p className="text-xs text-red-600 mt-1">Este correo ya está registrado.</p>
+                )}
               </label>
               <label className="block">Puesto
                 <input type="text" value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
@@ -257,12 +276,61 @@ const EmployeesManagement: React.FC = () => {
                   </select>
                 </label>
               </div>
+
+              {/* Asignaciones múltiples */}
+              <div className="mt-2">
+                <div className="text-sm font-medium text-gray-700 mb-1">Asignaciones (Depto + Puesto)</div>
+                <div className="space-y-2">
+                  {editAssignments.map((a, idx) => {
+                    const used = new Set(editAssignments.map(x => x.department));
+                    const dup = editAssignments.filter(x => x.department === a.department).length > 1;
+                    return (
+                      <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-5">
+                          <select
+                            value={a.department}
+                            onChange={e => {
+                              const v = e.target.value;
+                              setEditAssignments(prev => prev.map((x,i)=> i===idx ? { ...x, department: v } : x));
+                            }}
+                            className={`w-full border rounded-md px-3 py-2 ${dup ? 'border-red-500' : 'border-gray-300'}`}
+                          >
+                            <option value="">Selecciona…</option>
+                            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                        </div>
+                        <div className="col-span-6">
+                          <input
+                            value={a.position}
+                            onChange={e => setEditAssignments(prev => prev.map((x,i)=> i===idx ? { ...x, position: e.target.value } : x))}
+                            placeholder="Puesto"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                          />
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <button type="button" onClick={() => setEditAssignments(prev => prev.filter((_,i)=>i!==idx))} className="px-2 py-1 text-xs border rounded">-</button>
+                        </div>
+                        {dup && <div className="col-span-12 text-xs text-red-600">Departamento duplicado; ajusta la selección.</div>}
+                      </div>
+                    );
+                  })}
+                  <button type="button" onClick={() => setEditAssignments(prev => [...prev, { department: '', position: '' }])} className="px-2 py-1 text-xs border rounded">+ Agregar asignación</button>
+                  <div className="text-xs text-gray-500">Puedes tener varias asignaciones; no se requiere principal.</div>
+                </div>
+              </div>
+              {/* Campos de vacaciones removidos (se calculan automáticamente) */}
               <div className="grid grid-cols-2 gap-3">
-                <label className="block">Vacaciones totales
-                  <input type="number" min={0} value={vacTotal} onChange={(e) => setVacTotal(parseInt(e.target.value || '0', 10))} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
+                <label className="block">Nueva contraseña (opcional)
+                  <input type="password" value={editPass} onChange={(e)=>setEditPass(e.target.value)} className={`mt-1 w-full border rounded-md px-3 py-2 ${editPass && editPass.length < 6 ? 'border-red-500' : 'border-gray-300'}`} placeholder="Mín. 6 caracteres" />
+                  {editPass && editPass.length < 6 && (
+                    <p className="text-xs text-red-600 mt-1">Debe tener al menos 6 caracteres.</p>
+                  )}
                 </label>
-                <label className="block">Vacaciones usadas
-                  <input type="number" min={0} value={vacUsed} onChange={(e) => setVacUsed(parseInt(e.target.value || '0', 10))} className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2" />
+                <label className="block">Confirmar contraseña
+                  <input type="password" value={editPass2} onChange={(e)=>setEditPass2(e.target.value)} className={`mt-1 w-full border rounded-md px-3 py-2 ${(editPass2 && editPass !== editPass2) ? 'border-red-500' : 'border-gray-300'}`} />
+                  {editPass2 && editPass !== editPass2 && (
+                    <p className="text-xs text-red-600 mt-1">Las contraseñas no coinciden.</p>
+                  )}
                 </label>
               </div>
               {editHireDate && (
@@ -276,8 +344,7 @@ const EmployeesManagement: React.FC = () => {
                 })()}</div>
               )}
             </div>
-            <div className="mt-4 flex items-center justify-between">
-              <button onClick={() => setVacUsed(0)} className="text-sm text-gray-600 inline-flex items-center"><RefreshCw className="h-4 w-4 mr-1"/>Reiniciar usadas</button>
+            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 mt-6 py-3 px-0 flex items-center justify-end">
               <div className="flex gap-2">
                 <button onClick={() => setEditId(null)} className="px-3 py-2 text-sm rounded-md border border-gray-300">Cancelar</button>
                 {(() => {
@@ -285,7 +352,11 @@ const EmployeesManagement: React.FC = () => {
                   const validSupervisor = !editSupervisorId || supervisors.some(s => s.id === editSupervisorId && s.department === editDept);
                   const invalidDownline = editSupervisorId ? downlineIds.has(editSupervisorId) : false;
                   const barcodeTaken = !!(editBarcode && users.some(u => u.id !== editId && (u as any).barcode === editBarcode));
-                  const canSave = !!editName.trim() && !!editPosition.trim() && validSupervisor && !invalidSelf && !invalidDownline && !barcodeTaken;
+                  const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(editEmail);
+                  const emailTaken = users.some(u => u.id !== editId && u.email.toLowerCase() === editEmail.toLowerCase());
+                  const passOk = (!editPass && !editPass2) || (editPass.length >= 6 && editPass === editPass2);
+                  const dupAssign = editAssignments.some(a => a.department && editAssignments.filter(x => x.department === a.department).length > 1);
+                  const canSave = !!editName.trim() && emailValid && !emailTaken && passOk && validSupervisor && !invalidSelf && !invalidDownline && !barcodeTaken && !dupAssign;
                   return (
                     <button onClick={saveEdit} disabled={!canSave} className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white disabled:opacity-60">Guardar</button>
                   );
@@ -300,7 +371,7 @@ const EmployeesManagement: React.FC = () => {
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setCreateOpen(false)} />
-          <div className="relative bg-white dark:bg-[var(--bg-panel)] rounded-lg border border-gray-200 dark:border-[var(--border)] shadow-xl w-full max-w-lg p-6">
+          <div className="relative bg-white dark:bg-[var(--bg-panel)] rounded-lg border border-gray-200 dark:border-[var(--border)] shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-[var(--text-primary)]">Agregar empleado</h3>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <label className="block">Nombre
@@ -374,14 +445,9 @@ const EmployeesManagement: React.FC = () => {
                   <p className="mt-1 text-xs text-red-500">Las contraseñas no coinciden.</p>
                 )}
               </label>
-              <label className="block">Vacaciones totales
-                <input type="number" min={0} className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cVacTotal} onChange={e=>setCVacTotal(parseInt(e.target.value||'0',10))} />
-              </label>
-              <label className="block">Vacaciones usadas
-                <input type="number" min={0} className="mt-1 w-full border border-gray-300 dark:border-[var(--border)] rounded-md px-3 py-2 dark:bg-[var(--bg-panel)] dark:text-[var(--text-primary)]" value={cVacUsed} onChange={e=>setCVacUsed(parseInt(e.target.value||'0',10))} />
-              </label>
+              {/* Campos de vacaciones retirados para evitar conflictos con el cálculo automático */}
             </div>
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-[var(--bg-panel)] border-t border-gray-200 dark:border-[var(--border)] mt-4 py-3 flex items-center justify-end gap-2">
               <button onClick={()=>setCreateOpen(false)} className="px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-[var(--border)]">Cancelar</button>
               <button
                 onClick={()=>{
@@ -393,15 +459,17 @@ const EmployeesManagement: React.FC = () => {
                     department:cDept,
                     position:cPosition.trim(),
                     supervisorId: cSupervisorId||undefined,
-                    vacationDays:cVacTotal,
-                    usedVacationDays: Math.min(cVacTotal,cVacUsed),
+                    vacationDays: 0,
+                    usedVacationDays: 0,
                     phone: cPhone || undefined,
                     hireDate: cHireDate ? new Date(cHireDate).toISOString() : undefined,
                     contractType: (cContractType as any) || undefined,
                     barcode: cBarcode || undefined,
+                    assignments: cAssignments.filter(a => a.department && a.position),
                   } as any);
                   setCreateOpen(false);
-                  setCName(''); setCEmail(''); setCRole('employee'); setCDept(''); setCPosition(''); setCSupervisorId(''); setCVacTotal(10); setCVacUsed(0); setCPass(''); setCPass2(''); setCPhone(''); setCHireDate(''); setCContractType(''); setCBarcode('');
+                  setCName(''); setCEmail(''); setCRole('employee'); setCDept(''); setCPosition(''); setCSupervisorId(''); setCPass(''); setCPass2(''); setCPhone(''); setCHireDate(''); setCContractType(''); setCBarcode('');
+                  setCAssignments([]);
                 }}
                 disabled={
                   !cName.trim() ||
@@ -435,8 +503,6 @@ const EmployeesManagement: React.FC = () => {
               if (original.position !== editPosition) changes.push({ label: 'Puesto', from: original.position, to: editPosition });
               if (original.department !== editDept) changes.push({ label: 'Departamento', from: original.department, to: editDept });
               if ((original.supervisorId || '') !== editSupervisorId) changes.push({ label: 'Supervisor', from: original.supervisorId || '—', to: (supervisors.find(s => s.id === editSupervisorId)?.name || '—') });
-              if (original.vacationDays !== vacTotal) changes.push({ label: 'Vacaciones totales', from: original.vacationDays, to: vacTotal });
-              if (original.usedVacationDays !== vacUsed) changes.push({ label: 'Vacaciones usadas', from: original.usedVacationDays, to: vacUsed });
               return (
                 <div className="mt-4">
                   {changes.length === 0 ? (
@@ -473,6 +539,7 @@ const EmployeesManagement: React.FC = () => {
                 onClick={() => {
                   updateUser(editId, {
                     name: editName.trim() || undefined,
+                    email: editEmail.trim() || undefined,
                     position: editPosition.trim() || undefined,
                     department: editDept,
                     supervisorId: editSupervisorId || undefined,
@@ -480,8 +547,8 @@ const EmployeesManagement: React.FC = () => {
                     hireDate: editHireDate ? new Date(editHireDate).toISOString() : undefined,
                     contractType: (editContractType as any) || undefined,
                     barcode: editBarcode || undefined,
-                    vacationDays: vacTotal,
-                    usedVacationDays: Math.min(vacTotal, vacUsed),
+                    assignments: editAssignments.filter(a => a.department && a.position),
+                    ...(editPass && editPass === editPass2 && editPass.length >= 6 ? { password: editPass } : {}),
                   });
                   setConfirmOpen(false);
                   setEditId(null);

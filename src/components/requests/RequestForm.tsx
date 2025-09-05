@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, FileText, Clock, AlertCircle, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import { getVacationEntitlement, getServiceYearBounds } from '../../utils/policies/vacations';
 import { api } from '../../services/api';
 
 type RequestType = 'vacation' | 'permission' | 'leave';
@@ -22,7 +23,7 @@ const diffDaysInclusive = (startISO: string, endISO: string) => {
 const RequestForm: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { addRequest, addNotification } = useApp();
+  const { addRequest, addNotification, requests } = useApp();
 
   const [type, setType] = useState<RequestType | ''>('');
   const [startDate, setStartDate] = useState<string>(todayISO);
@@ -31,6 +32,40 @@ const RequestForm: React.FC = () => {
   const [urgent, setUrgent] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [dateHints, setDateHints] = useState<{ start?: string; end?: string }>({});
+
+  // Helpers para ventana legal de vacaciones (6 meses tras aniversario)
+  const serviceYear = React.useMemo(() => {
+    if (!currentUser) return null;
+    return getServiceYearBounds(currentUser as any);
+  }, [currentUser]);
+
+  const vacationWindow = React.useMemo(() => {
+    if (!serviceYear) return null;
+    const start = new Date(serviceYear.start);
+    const end = new Date(start);
+    end.setMonth(start.getMonth() + 6);
+    return { start, end };
+  }, [serviceYear]);
+
+  const entitlement = React.useMemo(() => {
+    if (!currentUser) return 0;
+    return getVacationEntitlement(currentUser as any);
+  }, [currentUser]);
+
+  const consumedThisServiceYear = React.useMemo(() => {
+    if (!currentUser || !serviceYear) return 0;
+    const { start, end } = serviceYear;
+    return requests
+      .filter(r => r.employeeId === currentUser.id && r.type === 'vacation' && r.status !== 'rejected')
+      .filter(r => {
+        const sd = new Date(r.startDate);
+        return sd >= start && sd < end;
+      })
+      .reduce((acc, r) => acc + (r.days || 0), 0);
+  }, [requests, currentUser, serviceYear]);
+
+  const remaining = Math.max(0, entitlement - consumedThisServiceYear);
 
   const totalDays = useMemo(() => {
     try {
@@ -59,6 +94,22 @@ const RequestForm: React.FC = () => {
     }
     if ((reason ?? '').trim().length < 5) {
       errs.push('El motivo debe tener al menos 5 caracteres.');
+    }
+    // Validaciones de políticas para vacaciones
+    if (type === 'vacation') {
+      if (vacationWindow) {
+        const s = new Date(startDate);
+        const e = new Date(endDate);
+        if (s < new Date(Math.max(vacationWindow.start.getTime(), new Date().setHours(0,0,0,0)))) {
+          errs.push('La fecha de inicio debe estar dentro de los 6 meses posteriores a tu aniversario.');
+        }
+        if (e > vacationWindow.end) {
+          errs.push('La fecha de fin excede la ventana de 6 meses posterior a tu aniversario.');
+        }
+      }
+      if (totalDays > remaining) {
+        errs.push(`No tienes días suficientes. Disponibles: ${remaining}.`);
+      }
     }
     return errs;
   };
@@ -162,10 +213,56 @@ const RequestForm: React.FC = () => {
               <input
                 type="date"
                 value={startDate}
-                min={todayISO}
-                onChange={(e) => setStartDate(e.target.value)}
+                min={(() => {
+                  if (type !== 'vacation') return todayISO;
+                  if (!vacationWindow) return todayISO;
+                  const today = new Date();
+                  const minDate = new Date(Math.max(vacationWindow.start.getTime(), new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()));
+                  return minDate.toISOString().slice(0,10);
+                })()}
+                max={(() => {
+                  if (type !== 'vacation' || !vacationWindow) return undefined as any;
+                  return vacationWindow.end.toISOString().slice(0,10);
+                })()}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (type === 'vacation' && vacationWindow && next) {
+                    const d = new Date(next);
+                    let clamped = d;
+                    if (d < vacationWindow.start) clamped = vacationWindow.start;
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    if (clamped < today) clamped = today;
+                    const nextISO = clamped.toISOString().slice(0,10);
+                    if (nextISO !== next) setDateHints(prev => ({ ...prev, start: 'Ajustado al inicio de la ventana legal.' }));
+                    else setDateHints(prev => ({ ...prev, start: undefined }));
+                    setStartDate(nextISO);
+                    // si fin es anterior a inicio o excede disponibles, reajustar
+                    setEndDate(prev => {
+                      const sISO = nextISO;
+                      if (!prev || new Date(prev) < new Date(sISO)) return sISO;
+                      // respetar límite por días disponibles
+                      if (type === 'vacation' && remaining > 0) {
+                        const maxEnd = (() => {
+                          const s = new Date(sISO);
+                          const e = new Date(sISO);
+                          e.setDate(s.getDate() + Math.max(0, remaining - 1));
+                          return e;
+                        })();
+                        const currEnd = new Date(prev);
+                        const windowEnd = vacationWindow.end;
+                        const cap = new Date(Math.min(maxEnd.getTime(), windowEnd.getTime()));
+                        return (currEnd > cap ? cap.toISOString().slice(0,10) : prev);
+                      }
+                      return prev;
+                    });
+                    return;
+                  }
+                  setDateHints(prev => ({ ...prev, start: undefined }));
+                  setStartDate(next);
+                }}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+              {dateHints.start && (<p className="mt-1 text-xs text-orange-600">{dateHints.start}</p>)}
               <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
           </div>
@@ -179,9 +276,38 @@ const RequestForm: React.FC = () => {
                 type="date"
                 value={endDate}
                 min={startDate || todayISO}
-                onChange={(e) => setEndDate(e.target.value)}
+                max={(() => {
+                  if (type !== 'vacation' || !vacationWindow) return undefined as any;
+                  return vacationWindow.end.toISOString().slice(0,10);
+                })()}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (type === 'vacation' && vacationWindow && next && startDate) {
+                    // cap por ventana y por días disponibles
+                    const s = new Date(startDate);
+                    const eDate = new Date(next);
+                    let capped = eDate;
+                    if (eDate > vacationWindow.end) {
+                      capped = vacationWindow.end;
+                    }
+                    if (eDate < s) capped = s;
+                    if (remaining > 0) {
+                      const maxByRemaining = new Date(s);
+                      maxByRemaining.setDate(s.getDate() + Math.max(0, remaining - 1));
+                      if (capped > maxByRemaining) capped = maxByRemaining;
+                    }
+                    const cappedISO = capped.toISOString().slice(0,10);
+                    if (cappedISO !== next) setDateHints(prev => ({ ...prev, end: 'Ajustado al máximo permitido por política.' }));
+                    else setDateHints(prev => ({ ...prev, end: undefined }));
+                    setEndDate(cappedISO);
+                    return;
+                  }
+                  setDateHints(prev => ({ ...prev, end: undefined }));
+                  setEndDate(next);
+                }}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+              {dateHints.end && (<p className="mt-1 text-xs text-orange-600">{dateHints.end}</p>)}
               <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
           </div>
@@ -192,6 +318,14 @@ const RequestForm: React.FC = () => {
           <span className="font-medium text-gray-900">Duración:</span>{' '}
           {totalDays} día{totalDays === 1 ? '' : 's'}
         </div>
+
+        {type === 'vacation' && vacationWindow && (
+          <div className="text-xs text-gray-600">
+            <span className="font-medium text-gray-900">Ventana legal:</span>{' '}
+            {vacationWindow.start.toISOString().slice(0,10)} — {vacationWindow.end.toISOString().slice(0,10)} ·{' '}
+            <span className="font-medium text-gray-900">Disponibles:</span> {remaining} / {entitlement}
+          </div>
+        )}
 
         {/* Motivo */}
         <div>

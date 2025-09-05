@@ -35,6 +35,7 @@ export const api = {
   getRequests: () => http<any[]>(`/requests`),
   createRequest: (data: any) => http<any>(`/requests`, { method: 'POST', body: data }),
   updateRequestStatus: (id: string, data: any) => http<any>(`/requests/${id}/status`, { method: 'PUT', body: data }),
+  deleteRequest: (id: string) => http<{ok:true}>(`/requests/${id}`, { method: 'DELETE' }),
 
   // Notifications
   getNotifications: (userId: string) => http<any[]>(`/notifications/${userId}`),

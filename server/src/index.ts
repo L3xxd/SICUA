@@ -25,7 +25,7 @@ app.post('/auth/login', async (req, res) => {
 
 // Users
 app.get('/users', async (_req, res) => {
-  const users = await prisma.user.findMany();
+  const users = await prisma.user.findMany({ include: { assignments: true } });
   res.json(users);
 });
 
@@ -50,7 +50,16 @@ app.post('/users', async (req, res) => {
       const exists = await prisma.user.findFirst({ where: { barcode } });
       if (exists) return res.status(400).json({ error: 'barcode ya existe' });
     }
-    const created = await prisma.user.create({ data: { ...data, barcode } });
+    const assignments = Array.isArray(data.assignments) ? data.assignments as Array<{department:string; position:string}> : [];
+    const mainDept = assignments[0]?.department ?? data.department;
+    const mainPos = assignments[0]?.position ?? data.position;
+
+    const created = await prisma.user.create({
+      data: { ...data, department: mainDept, position: mainPos, barcode, assignments: {
+        create: assignments.map(a => ({ department: a.department, position: a.position }))
+      } },
+      include: { assignments: true }
+    });
     res.status(201).json(created);
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -68,8 +77,31 @@ app.put('/users/:id', async (req, res) => {
       const exists = await prisma.user.findFirst({ where: { barcode: data.barcode, NOT: { id } } });
       if (exists) return res.status(400).json({ error: 'barcode ya existe' });
     }
-    const updated = await prisma.user.update({ where: { id }, data });
-    res.json(updated);
+    const assignments = Array.isArray(data.assignments) ? data.assignments as Array<{department:string; position:string}> : null;
+    const mainDept = assignments && assignments[0]?.department ? assignments[0].department : data.department;
+    const mainPos = assignments && assignments[0]?.position ? assignments[0].position : data.position;
+
+    const updated = await prisma.user.update({ where: { id }, data: { ...data, department: mainDept, position: mainPos } });
+
+    if (assignments) {
+      // sync: delete removed, upsert provided
+      const existing = await prisma.departmentAssignment.findMany({ where: { userId: id } });
+      const nextKeys = new Set(assignments.map(a => a.department));
+      const toDelete = existing.filter(e => !nextKeys.has(e.department)).map(e => e.id);
+      if (toDelete.length) {
+        await prisma.departmentAssignment.deleteMany({ where: { id: { in: toDelete } } });
+      }
+      for (const a of assignments) {
+        await prisma.departmentAssignment.upsert({
+          where: { userId_department: { userId: id, department: a.department } },
+          update: { position: a.position },
+          create: { userId: id, department: a.department, position: a.position },
+        });
+      }
+    }
+
+    const withAssign = await prisma.user.findUnique({ where: { id }, include: { assignments: true } });
+    res.json(withAssign);
   } catch (e: any) {
     res.status(400).json({ error: e.message });
   }
@@ -98,6 +130,17 @@ app.put('/requests/:id/status', async (req, res) => {
   try {
     const updated = await prisma.request.update({ where: { id }, data: { status, approvedBy, rejectionReason, approvedDate: status === 'approved' ? new Date() : null } });
     res.json(updated);
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.delete('/requests/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.requestHistory.deleteMany({ where: { requestId: id } });
+    await prisma.request.delete({ where: { id } });
+    res.json({ ok: true });
   } catch (e: any) {
     res.status(400).json({ error: e.message });
   }

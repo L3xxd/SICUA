@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { mockUsers } from '../../data/mockData';
 import { Users, FileText, TrendingUp, AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getVacationEntitlement } from '../../utils/policies/vacations';
 
 const HRDashboard: React.FC = () => {
-  const { requests } = useApp();
+  const { requests, users, refreshAll } = useApp();
   const navigate = useNavigate();
 
-  const totalEmployees = mockUsers.length;
+  React.useEffect(() => { refreshAll().catch(()=>{}); }, []);
+
+  const totalEmployees = users.length;
   const totalRequests = requests.length;
   const pendingRequests = requests.filter((r) => r.status === 'pending').length;
 
@@ -51,21 +53,20 @@ const HRDashboard: React.FC = () => {
     },
   ];
 
-  // Los 12 departamentos acordados
-  const departmentStats = [
-    { name: 'Agrocibernética',                                   employees: 12, vacationDays: 144, usedDays: 89 },
-    { name: 'Biotecnología de Alimentos',                        employees:  8, vacationDays:  96, usedDays: 20 },
-    { name: 'Biotecnología Agrícola',                            employees:  6, vacationDays:  72, usedDays: 34 },
-    { name: 'Calidad Agroalimentaria e Inocuidad',               employees:  4, vacationDays:  48, usedDays: 23 },
-    { name: 'Organismo Certificador',                            employees: 10, vacationDays: 120, usedDays: 23 },
-    { name: 'Unidad de Inspección',                              employees: 15, vacationDays: 180, usedDays:  4 },
-    { name: 'Unidad de Inspección de Información Comercial',     employees:  2, vacationDays:  24, usedDays: 14 },
-    { name: 'Departamento de Comercialización',                  employees:  8, vacationDays:  96, usedDays:  8 },
-    { name: 'Unidad de Apoyo Administrativo',                    employees: 10, vacationDays:  22, usedDays: 12 },
-    { name: 'Mantenimiento',                                     employees:  2, vacationDays:  24, usedDays:  1 },
-    { name: 'Recursos Humanos',                                  employees:  1, vacationDays:  12, usedDays:  0 },
-    { name: 'Dirección General',                                 employees:  1, vacationDays:  12, usedDays:  0 },
-  ];
+  // Resumen por departamento con datos reales
+  const departmentStats = useMemo(() => {
+    const byDept = new Map<string, { employees: number; entitlementDays: number; usedDays: number }>();
+    for (const u of users) {
+      const key = u.department || '—';
+      const curr = byDept.get(key) || { employees: 0, entitlementDays: 0, usedDays: 0 };
+      curr.employees += 1;
+      const entitlement = getVacationEntitlement(u as any);
+      curr.entitlementDays += entitlement;
+      curr.usedDays += u.usedVacationDays || 0;
+      byDept.set(key, curr);
+    }
+    return Array.from(byDept.entries()).map(([name, v]) => ({ name, ...v }));
+  }, [users]);
 
   return (
     <div className="space-y-6">
@@ -108,8 +109,8 @@ const HRDashboard: React.FC = () => {
         <div className="space-y-4">
           {departmentStats.map((dept, index) => {
             const pct =
-              dept.vacationDays > 0
-                ? Math.min(100, Math.max(0, (dept.usedDays / dept.vacationDays) * 100))
+              dept.entitlementDays > 0
+                ? Math.min(100, Math.max(0, (dept.usedDays / dept.entitlementDays) * 100))
                 : 0;
 
             return (
@@ -128,7 +129,7 @@ const HRDashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {dept.usedDays}/{dept.vacationDays} días usados
+                    {dept.usedDays}/{dept.entitlementDays} días usados
                   </p>
                   <div className="mt-1 w-32 bg-gray-200 rounded-full h-2">
                     <div

@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { mockUsers } from '../data/mockData';
 import { CheckCircle, XCircle, Clock, AlertTriangle, Eye } from 'lucide-react';
 import { Request } from '../types';
 
 const ApprovalsView: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests, updateRequestStatus, addNotification } = useApp();
+  const { requests, users, updateRequestStatus, addNotification } = useApp();
 
   // UI state for modals
   const [detailReq, setDetailReq] = useState<Request | null>(null);
@@ -17,7 +16,7 @@ const ApprovalsView: React.FC = () => {
   // Obtener solicitudes que requieren aprobación
   const getRequestsToApprove = () => {
     if (currentUser?.role === 'supervisor') {
-      const teamMembers = mockUsers.filter(user => user.supervisorId === currentUser?.id);
+      const teamMembers = users.filter(user => user.supervisorId === currentUser?.id);
       return requests.filter(request =>
         teamMembers.some(member => member.id === request.employeeId) &&
         (request.stage ?? 'supervisor') === 'supervisor' && request.status !== 'rejected'
@@ -30,7 +29,7 @@ const ApprovalsView: React.FC = () => {
     return [];
   };
 
-  const pendingRequests = useMemo(() => getRequestsToApprove(), [requests, currentUser]);
+  const pendingRequests = useMemo(() => getRequestsToApprove(), [requests, users, currentUser]);
 
   const handleApprove = (requestId: string, employeeId: string, employeeName: string) => {
     updateRequestStatus(requestId, 'approved', currentUser?.name);
@@ -80,7 +79,7 @@ const ApprovalsView: React.FC = () => {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="p-2 bg-orange-500 rounded-lg">
@@ -107,17 +106,6 @@ const ApprovalsView: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-500 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-white" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Tiempo Promedio</h3>
-              <p className="text-2xl font-semibold text-gray-900">2.1 días</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Requests list */}

@@ -31,6 +31,7 @@ model User {
   requests         Request[]
   notifications    Notification[]
   // attendances removed (reverted)
+  assignments      DepartmentAssignment[]
 }
 
 model Request {
@@ -98,3 +99,14 @@ model PolicyChange {
 }
 
 // Attendance model removed (reverted)
+model DepartmentAssignment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  department String
+  position   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, department])
+}

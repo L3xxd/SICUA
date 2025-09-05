@@ -1,6 +1,5 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { mockUsers } from '../../data/mockData';
 import {
   TrendingUp,
   Users,
@@ -12,15 +11,17 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const DirectorDashboard: React.FC = () => {
-  const { requests } = useApp();
+  const { requests, users, refreshAll } = useApp();
   const navigate = useNavigate();
 
-  const totalEmployees = mockUsers.length;
-  const totalVacationDays = mockUsers.reduce(
+  React.useEffect(() => { refreshAll().catch(() => {}); }, []);
+
+  const totalEmployees = users.length;
+  const totalVacationDays = users.reduce(
     (sum, user) => sum + (user.vacationDays || 0),
     0
   );
-  const usedVacationDays = mockUsers.reduce(
+  const usedVacationDays = users.reduce(
     (sum, user) => sum + (user.usedVacationDays || 0),
     0
   );
@@ -74,26 +75,36 @@ const DirectorDashboard: React.FC = () => {
     },
   ];
 
-  const predictiveInsights = [
-    {
-      period: 'Febrero 2025',
-      prediction: 'Pico de solicitudes esperado',
-      impact: 'Alto',
-      recommendation: 'Considerar restricciones temporales',
-    },
-    {
-      period: 'Marzo 2025',
-      prediction: 'Disponibilidad del 85%',
-      impact: 'Medio',
-      recommendation: 'Monitorear departamento de Ventas',
-    },
-    {
-      period: 'Abril 2025',
-      prediction: 'Normalización de ausencias',
-      impact: 'Bajo',
-      recommendation: 'Continuar política actual',
-    },
-  ];
+  // Data-driven predictive summary for next 3 months
+  const predictiveInsights = React.useMemo(() => {
+    const now = new Date();
+    const result: { period: string; prediction: string; impact: 'Alto'|'Medio'|'Bajo'; recommendation: string }[] = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = d.toLocaleString(undefined, { month: 'long' });
+      const year = d.getFullYear();
+      const monthRequests = requests.filter(r => (r.startDate || '').startsWith(ym));
+      const count = monthRequests.length;
+      let impact: 'Alto'|'Medio'|'Bajo' = 'Bajo';
+      if (count >= 15) impact = 'Alto';
+      else if (count >= 7) impact = 'Medio';
+      const prediction = count === 0
+        ? 'Sin picos previstos'
+        : `${count} solicitudes programadas`;
+      const recommendation = impact === 'Alto'
+        ? 'Considerar restricciones temporales'
+        : impact === 'Medio'
+        ? 'Monitorear cargas críticas'
+        : 'Operación normal';
+      result.push({ period: `${capitalize(monthName)} ${year}`, prediction, impact, recommendation });
+    }
+    return result;
+  }, [requests]);
+
+  function capitalize(s: string) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
 
   return (
     <div className="space-y-6">
@@ -191,22 +202,39 @@ const DirectorDashboard: React.FC = () => {
           </h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">
-                Disponibilidad promedio
+              <span className="text-sm text-gray-600">Disponibilidad promedio</span>
+              <span className="font-semibold text-gray-900">
+                {(() => {
+                  const eligible = users.filter(u => (u.vacationDays || 0) > 0);
+                  if (eligible.length === 0) return '—';
+                  const avg = eligible.reduce((acc, u) => {
+                    const used = u.usedVacationDays || 0;
+                    const total = u.vacationDays || 0;
+                    const avail = total > 0 ? 1 - used / total : 1;
+                    return acc + avail;
+                  }, 0) / eligible.length;
+                  return `${(avg * 100).toFixed(1)}%`;
+                })()}
               </span>
-              <span className="font-semibold text-gray-900">87.3%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">
-                Tiempo de aprobación promedio
+              <span className="text-sm text-gray-600">Tiempo de aprobación promedio</span>
+              <span className="font-semibold text-gray-900">
+                {(() => {
+                  const approved = requests.filter(r => r.status === 'approved' && r.requestDate && r.approvedDate);
+                  if (approved.length === 0) return '—';
+                  const avgDays = approved.reduce((acc, r) => {
+                    const start = new Date(r.requestDate as string).getTime();
+                    const end = new Date(r.approvedDate as string).getTime();
+                    return acc + Math.max(0, (end - start) / (1000 * 60 * 60 * 24));
+                  }, 0) / approved.length;
+                  return `${avgDays.toFixed(1)} días`;
+                })()}
               </span>
-              <span className="font-semibold text-gray-900">2.1 días</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">
-                Satisfacción empleados
-              </span>
-              <span className="font-semibold text-gray-900">4.6/5</span>
+              <span className="text-sm text-gray-600">Solicitudes pendientes actuales</span>
+              <span className="font-semibold text-gray-900">{requests.filter(r => r.status === 'pending').length}</span>
             </div>
           </div>
         </div>

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { mockUsers } from '../data/mockData';
-import { Users, Search, Clock, CheckCircle } from 'lucide-react';
+import { Users, Clock, CheckCircle } from 'lucide-react';
+import { getVacationEntitlement } from '../utils/policies/vacations';
 
 const TeamView: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests, searchQuery } = useApp();
+  const { requests, searchQuery, users } = useApp();
   const [groupByDept, setGroupByDept] = useState<boolean>(false);
   // searchQuery proviene del header
 
@@ -15,13 +15,13 @@ const TeamView: React.FC = () => {
 
   const people = useMemo(() => {
     if (isSupervisor) {
-      return mockUsers.filter(u => u.supervisorId === currentUser?.id);
+      return users.filter(u => u.supervisorId === currentUser?.id);
     }
     if (isHRorDirector) {
-      return mockUsers.filter(u => u.role === 'employee' || u.role === 'supervisor');
+      return users.filter(u => u.role === 'employee' || u.role === 'supervisor');
     }
-    return mockUsers.filter(u => u.id === currentUser?.id);
-  }, [currentUser?.id, isSupervisor, isHRorDirector]);
+    return users.filter(u => u.id === currentUser?.id);
+  }, [users, currentUser?.id, isSupervisor, isHRorDirector]);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -99,14 +99,7 @@ const TeamView: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((p) => {
-            const initials = p.name.split(' ').map(n => n[0]).join('');
-            const stats = getStats(p.id);
-            const pct = p.vacationDays > 0 ? Math.min(100, Math.max(0, (p.usedVacationDays / p.vacationDays) * 100)) : 0;
-            return (
-              renderCard(p)
-            );
-          })}
+          {filtered.map((p) => renderCard(p))}
         </div>
       )}
     </div>
@@ -115,7 +108,8 @@ const TeamView: React.FC = () => {
   function renderCard(p: typeof people[number]) {
     const initials = p.name.split(' ').map(n => n[0]).join('');
     const stats = getStats(p.id);
-    const pct = p.vacationDays > 0 ? Math.min(100, Math.max(0, (p.usedVacationDays / p.vacationDays) * 100)) : 0;
+    const entitlement = getVacationEntitlement(p as any);
+    const pct = entitlement > 0 ? Math.min(100, Math.max(0, (p.usedVacationDays / entitlement) * 100)) : 0;
     return (
       <div key={p.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 transition-colors">
         <div className="flex items-center">
@@ -140,7 +134,7 @@ const TeamView: React.FC = () => {
         <div className="mt-3">
           <div className="flex justify-between text-xs text-gray-500">
             <span>Vacaciones usadas</span>
-            <span className="font-medium text-gray-700">{p.usedVacationDays}/{p.vacationDays}</span>
+            <span className="font-medium text-gray-700">{p.usedVacationDays}/{entitlement}</span>
           </div>
           <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
             <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${pct}%` }} />

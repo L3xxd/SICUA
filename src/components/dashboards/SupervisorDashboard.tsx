@@ -1,17 +1,19 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { mockUsers } from '../../data/mockData';
 import { Users, CheckSquare, Calendar, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getVacationEntitlement } from '../../utils/policies/vacations';
 
 const SupervisorDashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const { requests } = useApp();
+  const { requests, users, refreshAll } = useApp();
   const navigate = useNavigate();
 
+  React.useEffect(() => { refreshAll().catch(()=>{}); }, []);
+
   // Empleados bajo supervisión
-  const teamMembers = mockUsers.filter((user) => user.supervisorId === currentUser?.id);
+  const teamMembers = users.filter((user) => user.supervisorId === currentUser?.id);
 
   // Solicitudes del equipo
   const teamMemberIds = new Set(teamMembers.map((m) => m.id));
@@ -176,10 +178,10 @@ const SupervisorDashboard: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teamMembers.map((member) => {
-              const pct =
-                member.vacationDays > 0
-                  ? Math.min(100, Math.max(0, (member.usedVacationDays / member.vacationDays) * 100))
-                  : 0;
+              const entitlement = getVacationEntitlement(member as any);
+              const pct = entitlement > 0
+                ? Math.min(100, Math.max(0, (member.usedVacationDays / entitlement) * 100))
+                : 0;
 
               return (
                 <div key={member.id} className="p-4 border border-gray-200 rounded-lg">
@@ -199,7 +201,7 @@ const SupervisorDashboard: React.FC = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Vacaciones usadas</span>
                       <span className="font-medium">
-                        {member.usedVacationDays}/{member.vacationDays}
+                        {member.usedVacationDays}/{entitlement}
                       </span>
                     </div>
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">

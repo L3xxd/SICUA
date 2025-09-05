@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, CheckCircle, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { mockUsers } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 
 const CalendarView: React.FC = () => {
-  const { requests } = useApp();
+  const { requests, users } = useApp();
   const { currentUser } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'year'>('month');
@@ -39,17 +38,15 @@ const CalendarView: React.FC = () => {
   const isEmployeeView = currentUser?.role === 'employee';
   const isSupervisorView = currentUser?.role === 'supervisor';
 
-  const personalUsers = React.useMemo(() => mockUsers.filter(u => u.id === currentUser?.id), [currentUser?.id]);
+  const personalUsers = React.useMemo(() => users.filter(u => u.id === currentUser?.id), [users, currentUser?.id]);
 
   const associatedUsers = React.useMemo(() => {
-    if (isEmployeeView) return [] as typeof mockUsers;
+    if (isEmployeeView) return [] as typeof users;
     if (isSupervisorView) {
-      // Departamento a cargo del supervisor (excluye su usuario para evitar duplicar en asociado)
-      return mockUsers.filter(u => u.department === currentUser?.department && u.id !== currentUser?.id);
+      return users.filter(u => u.department === currentUser?.department && u.id !== currentUser?.id);
     }
-    // RRHH / Director: toda la organización excluyendo el propio usuario en el ámbito asociado
-    return mockUsers.filter(u => u.id !== currentUser?.id);
-  }, [isEmployeeView, isSupervisorView, currentUser?.department, currentUser?.id]);
+    return users.filter(u => u.id !== currentUser?.id);
+  }, [users, isEmployeeView, isSupervisorView, currentUser?.department, currentUser?.id]);
 
   const activeUsers = scope === 'personal' ? personalUsers : associatedUsers;
   const activeUserIds = React.useMemo(() => new Set(activeUsers.map(u => u.id)), [activeUsers]);

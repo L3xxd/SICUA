@@ -2,13 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { Calendar, Clock, FileText, XCircle ,CheckCircle, Eye} from 'lucide-react';
+import { Calendar, Clock, FileText, Eye, Trash2 } from 'lucide-react';
 
 const RequestsList: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { requests, updateRequestStatus } = useApp();
-  const [cancelId, setCancelId] = useState<string | null>(null);
+  const { requests, deleteRequest } = useApp();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const myRequests = requests.filter(r => r.employeeId === currentUser?.id);
 
@@ -220,18 +220,17 @@ const RequestsList: React.FC = () => {
                         {getStatusText(request.status)}
                       </span>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="Ver detalles">
                           <Eye className="h-4 w-4" />
                         </button>
                         {request.status === 'pending' && (
-                          <>
-                            <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                            <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          </>
+                          <button
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            title="Eliminar solicitud"
+                            onClick={() => setConfirmDeleteId(request.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -242,9 +241,26 @@ const RequestsList: React.FC = () => {
           </div>
         )}
       </div>
+
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setConfirmDeleteId(null)} />
+          <div className="relative bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900">Eliminar solicitud</h3>
+            <p className="mt-2 text-sm text-gray-600">¿Estás seguro de eliminar esta solicitud? Esta acción no se puede deshacer.</p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button onClick={() => setConfirmDeleteId(null)} className="px-3 py-2 text-sm rounded-md border border-gray-300">Cancelar</button>
+              <button
+                onClick={async () => { await deleteRequest(confirmDeleteId); setConfirmDeleteId(null); }}
+                className="px-3 py-2 text-sm rounded-md bg-red-600 text-white"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-
-
   );
 };
 

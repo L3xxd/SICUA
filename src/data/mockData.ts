@@ -1,5 +1,11 @@
 import { User, Request, Notification, Department, PolicyRule } from '../types';
 
+// Fechas dinámicas para que ciertos escenarios de demo se alineen con la fecha actual
+const TODAY = new Date();
+const ANA_HIRED = new Date(TODAY);
+ANA_HIRED.setFullYear(TODAY.getFullYear() - 1); // Hoy se cumple 1 año de antigüedad
+const ANA_HIRED_ISO = ANA_HIRED.toISOString().slice(0, 10);
+
 // Datos simulados para el sistema
 export const mockUsers: User[] = [
   {
@@ -31,7 +37,9 @@ export const mockUsers: User[] = [
     position: 'Operador de Mantenimiento',
     supervisorId: '2',
     vacationDays: 10,
-    usedVacationDays: 1,
+    usedVacationDays: 0,
+    hireDate: ANA_HIRED_ISO,
+    contractType: 'fijo',
   },
   {
     id: '4',
@@ -862,38 +870,6 @@ export const mockUsers: User[] = [
 ];
 
 export const mockRequests: Request[] = [
-  {
-    id: '1',
-    employeeId: '3',
-    employeeName: 'Ana López',
-    type: 'vacation',
-    startDate: '2025-02-15',
-    endDate: '2025-02-19',
-    reason: 'Vacaciones familiares',
-    status: 'pending',
-    stage: 'supervisor',
-    supervisorName: 'Carlos Mendez',
-    department: 'Mantenimiento',
-    requestDate: '2025-01-15',
-    days: 5,
-    urgent: false,
-  },
-  {
-    id: '3',
-    employeeId: '3',
-    employeeName: 'Ana López',
-    type: 'vacation',
-    startDate: '2025-02-15',
-    endDate: '2025-02-19',
-    reason: 'Vacaciones familiares',
-    status: 'pending',
-    stage: 'supervisor',
-    supervisorName: 'Carlos Mendez',
-    department: 'Mantenimiento',
-    requestDate: '2025-01-15',
-    days: 15,
-    urgent: false,
-  },
   {
     id: '2',
     employeeId: '3',
