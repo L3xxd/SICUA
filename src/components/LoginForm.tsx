@@ -15,6 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { Moon, Sun } from 'lucide-react';
+import Footer from './Footer';
 
 type QuickLogin = {
   role: string;
@@ -56,8 +57,9 @@ const LoginForm: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-[var(--bg-main)] dark:from-transparent dark:to-transparent flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-[var(--bg-main)] dark:from-transparent dark:to-transparent">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
         {/* Toggle de tema */}
         <div className="flex justify-end">
           <button
@@ -203,6 +205,8 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 };
