@@ -4,6 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev:all": "node scripts/dev-all.mjs",
+    "build:all": "node scripts/build-all.mjs",
+    "start:all": "node scripts/start-all.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

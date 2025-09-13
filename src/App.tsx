@@ -1,26 +1,26 @@
 import React from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import { Protected } from './components/Protected/Protected';
-import Layout from './components/Layout';
-import RequestForm from './components/requests/RequestForm';
-import RequestsList from './components/requests/RequestsList';
-import Dashboard from './components/Dashboard';
-import LoginForm from './components/LoginForm';
-import CalendarView from './components/CalendarView';
-import ApprovalsView from './components/ApprovalsView';
-import TeamView from './components/TeamView';
-import EmployeesManagement from './components/EmployeesManagement';
-import PoliciesView from './components/PoliciesView';
-import ReportsView from './components/ReportsView';
-import ExecutiveReports from './components/director/ExecutiveReports';
-import AnalyticsView from './components/director/AnalyticsView';
-import ProfileView from './components/ProfileView';
+import { Protected } from './features/auth/Protected';
+import Layout from './app/layout/Layout';
+import RequestForm from './features/requests/RequestForm';
+import RequestsList from './features/requests/RequestsList';
+import Dashboard from './features/dashboard/Dashboard';
+import LoginPage from './features/auth/LoginPage';
+import CalendarView from './features/calendar/CalendarView';
+import ApprovalsView from './features/approvals/ApprovalsView';
+import TeamView from './features/team/TeamView';
+import EmployeesManagement from './features/users/EmployeesManagement';
+import PoliciesView from './features/policies/PoliciesView';
+import ReportsView from './features/reports/ReportsView';
+import ExecutiveReports from './features/director/ExecutiveReports';
+import AnalyticsView from './features/director/AnalyticsView';
+import ProfileView from './features/users/ProfileView';
 
 const App: React.FC = () => {
   return (
     <Routes>
       {/* Ruta pública */}
-      <Route path="/login" element={<LoginForm />} />
+      <Route path="/login" element={<LoginPage />} />
 
       {/* Rutas protegidas */}
       <Route element={<Protected />}>
